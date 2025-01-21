@@ -1,0 +1,567 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Tickify API",
+        "description": "A simple REST API using Axum for support ticket management.",
+        "contact": {
+            "name": "Allan Somensi",
+            "email": "allansomensidev@gmail.com"
+        },
+        "license": {
+            "name": "MIT",
+            "identifier": "MIT"
+        },
+        "version": "0.1.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Local server"
+        }
+    ],
+    "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Returns a JTW.",
+                "description": "Returns a JWT if the credentials passed are valid.",
+                "operationId": "login",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginPayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Logged in successfully."
+                    },
+                    "401": {
+                        "description": "Incorrect password, unauthorized."
+                    },
+                    "404": {
+                        "description": "User not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/verify": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify JWT.",
+                "description": "Checks if a JWT is valid.",
+                "operationId": "verify",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyTokenPayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "JWT provided is valid."
+                    }
+                }
+            }
+        },
+        "/api/v1/migrations": {
+            "post": {
+                "tags": [
+                    "Migrations"
+                ],
+                "summary": "Execute pending database migrations.",
+                "description": "This endpoint executes any pending migrations in the database. It applies migrations that have not yet been run and provides confirmation upon success.",
+                "operationId": "live_run",
+                "responses": {
+                    "200": {
+                        "description": "Migrations applied successfully",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "An error occurred while applying migrations"
+                    }
+                }
+            }
+        },
+        "/api/v1/status": {
+            "get": {
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Get API and database status",
+                "description": "Fetches the current operational status of the API, including database information such as version, max connections, and active connections.",
+                "operationId": "show_status",
+                "responses": {
+                    "200": {
+                        "description": "Status retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Status"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List all users.",
+                "description": "Fetches all users stored in the database. If there are no users, returns an empty array.",
+                "operationId": "show_users",
+                "responses": {
+                    "200": {
+                        "description": "Users retrieved successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/User"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No users found in the database."
+                    },
+                    "500": {
+                        "description": "An error occurred while retrieving the users."
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update an existing user.",
+                "description": "This endpoint updates the details of an existing user in the database.",
+                "operationId": "update_user",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateUserPayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "User updated successfully.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input, including empty name or name too short/long."
+                    },
+                    "404": {
+                        "description": "User ID not found."
+                    },
+                    "409": {
+                        "description": "Conflict: User with the same name already exists."
+                    },
+                    "500": {
+                        "description": "An error occurred while updating the user."
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create a new user.",
+                "description": "This endpoint creates a new user in the database with the provided details.",
+                "operationId": "create_user",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateUserPayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created successfully.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input, including empty name or name too short/long."
+                    },
+                    "409": {
+                        "description": "Conflict: User with the same name already exists."
+                    },
+                    "500": {
+                        "description": "An error occurred while creating the user."
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete an existing user.",
+                "description": "This endpoint deletes a specific user from the database using its ID.",
+                "operationId": "delete_user",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeletePayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "User deleted successfully"
+                    },
+                    "404": {
+                        "description": "User ID not found"
+                    },
+                    "500": {
+                        "description": "An error occurred while deleting the user"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/count": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get the total count of users.",
+                "description": "This endpoint retrieves the total number of users stored in the database.",
+                "operationId": "count_users",
+                "responses": {
+                    "200": {
+                        "description": "User count retrieved successfully.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "integer",
+                                    "format": "int32"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "An error occurred while retrieving the user count."
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get a specific user by ID.",
+                "description": "This endpoint retrieves a user's details from the database using its ID. Returns the user if found, or a 404 status if not found.",
+                "operationId": "search_user",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The unique identifier of the user to retrieve.",
+                        "required": true,
+                        "example": "e1af2946-c462-4541-a788-c912458c995c"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User retrieved successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No user found with the specified ID."
+                    },
+                    "500": {
+                        "description": "An error occurred while retrieving the user."
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CreateUserPayload": {
+                "type": "object",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "first_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Database": {
+                "type": "object",
+                "required": [
+                    "version",
+                    "max_connections",
+                    "opened_connections"
+                ],
+                "properties": {
+                    "max_connections": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "opened_connections": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "version": {
+                        "$ref": "#/components/schemas/String"
+                    }
+                }
+            },
+            "DeletePayload": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                }
+            },
+            "Dependencies": {
+                "type": "object",
+                "required": [
+                    "database"
+                ],
+                "properties": {
+                    "database": {
+                        "$ref": "#/components/schemas/Database"
+                    }
+                }
+            },
+            "LoginPayload": {
+                "type": "object",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "password": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Status": {
+                "type": "object",
+                "required": [
+                    "updated_at",
+                    "dependencies"
+                ],
+                "properties": {
+                    "dependencies": {
+                        "$ref": "#/components/schemas/Dependencies"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "String": {
+                "type": "string"
+            },
+            "UpdateUserPayload": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "first_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "last_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "password": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "username": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            },
+            "User": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "username",
+                    "password_hash",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "first_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "last_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "password_hash": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "username": {
+                        "type": "string"
+                    }
+                }
+            },
+            "VerifyTokenPayload": {
+                "type": "object",
+                "required": [
+                    "token"
+                ],
+                "properties": {
+                    "token": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Status",
+            "description": "Status endpoints"
+        },
+        {
+            "name": "Migrations",
+            "description": "Migrations endpoints"
+        },
+        {
+            "name": "Auth",
+            "description": "Auth endpoints"
+        },
+        {
+            "name": "Users",
+            "description": "Users endpoints"
+        }
+    ]
+}

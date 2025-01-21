@@ -1,0 +1,28 @@
+[package]
+name = "tickify"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+argon2 = { version = "0.5.3", features = ["std"] }
+axum = "0.8.2"
+chrono = { version = "0.4.39", features = ["serde"] }
+dotenvy = "0.15.7"
+jsonwebtoken = "9.3.0"
+serde = { version = "1.0.217", features = ["derive"] }
+sqlx = { version = "0.8.3", features = [
+    "chrono",
+    "postgres",
+    "runtime-tokio-native-tls",
+    "uuid",
+] }
+thiserror = "2.0.11"
+tokio = { version = "1.43.0", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["cors"] }
+tracing = "0.1.41"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+utoipa = { version = "5.3.1", features = ["chrono", "uuid"] }
+utoipa-swagger-ui = { version = "9.0.0", features = ["axum"] }
+uuid = { version = "1.12.0", features = ["serde", "v4"] }
+validator = { version = "0.20.0", features = ["derive"] }
