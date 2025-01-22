@@ -2,6 +2,7 @@ pub mod auth;
 pub mod migrations;
 pub mod status;
 pub mod swagger;
+pub mod ticket;
 pub mod user;
 
 use crate::{config::Config, database::AppState};
@@ -16,7 +17,8 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
                 .nest("/status", status::create_routes(state.clone()))
                 .nest("/migrations", migrations::create_routes(state.clone()))
                 .nest("/auth", auth::create_routes(state.clone()))
-                .nest("/users", user::create_routes(state)),
+                .nest("/users", user::create_routes(state.clone()))
+                .nest("/tickets", ticket::create_routes(state.clone())),
         )
         .merge(swagger::swagger_routes())
         .layer(Config::cors())

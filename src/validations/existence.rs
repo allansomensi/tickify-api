@@ -22,3 +22,23 @@ pub async fn user_exists(state: Arc<AppState>, user_id: Uuid) -> Result<(), ApiE
         Ok(())
     }
 }
+
+/// Checks if the ticket is already registered according to his ID.
+pub async fn ticket_exists(state: Arc<AppState>, ticket_id: Uuid) -> Result<(), ApiError> {
+    let exists = sqlx::query(r#"SELECT id FROM tickets WHERE id = $1;"#)
+        .bind(ticket_id)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|e| {
+            error!("Error fetching ticket by ID: {e}");
+            ApiError::DatabaseError(e)
+        })?
+        .is_some();
+
+    if !exists {
+        error!("Ticket ID not found.");
+        Err(ApiError::NotFound)
+    } else {
+        Ok(())
+    }
+}

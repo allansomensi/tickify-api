@@ -5,6 +5,7 @@ use uuid::Uuid;
 pub mod auth;
 pub mod jwt;
 pub mod status;
+pub mod ticket;
 pub mod user;
 
 #[derive(Deserialize, Serialize, ToSchema)]

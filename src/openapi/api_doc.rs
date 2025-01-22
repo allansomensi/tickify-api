@@ -1,6 +1,6 @@
 use crate::{
-    controllers::{auth, migrations, status, user},
-    models::{status::Status, user::User},
+    controllers::{auth, migrations, status, ticket, user},
+    models::{status::Status, ticket::Ticket, user::User},
 };
 
 #[derive(utoipa::OpenApi)]
@@ -32,15 +32,24 @@ use crate::{
         user::create_user,
         user::update_user,
         user::delete_user,
+
+        // Tickets
+        ticket::count_tickets,
+        ticket::search_ticket,
+        ticket::show_tickets,
+        ticket::create_ticket,
+        ticket::update_ticket,
+        ticket::delete_ticket,
     ),
     components(
-        schemas(Status, User)
+        schemas(Status, User, Ticket)
     ),
     tags(
         (name = "Status", description = "Status endpoints"),
         (name = "Migrations", description = "Migrations endpoints"),
         (name = "Auth", description = "Auth endpoints"),
         (name = "Users", description = "Users endpoints"),
+        (name = "Tickets", description = "Tickets endpoints"),
     )
 )]
 pub struct ApiDoc;
