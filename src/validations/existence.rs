@@ -1,5 +1,4 @@
 use crate::{database::AppState, errors::api_error::ApiError};
-use std::sync::Arc;
 use tracing::error;
 use uuid::Uuid;
 
@@ -24,7 +23,7 @@ pub async fn user_exists(state: &AppState, user_id: Uuid) -> Result<(), ApiError
 }
 
 /// Checks if the ticket is already registered according to his ID.
-pub async fn ticket_exists(state: Arc<AppState>, ticket_id: Uuid) -> Result<(), ApiError> {
+pub async fn ticket_exists(state: &AppState, ticket_id: Uuid) -> Result<(), ApiError> {
     let exists = sqlx::query(r#"SELECT id FROM tickets WHERE id = $1;"#)
         .bind(ticket_id)
         .fetch_optional(&state.db)

@@ -1,6 +1,5 @@
 use crate::database::AppState;
-use crate::models::ticket::{TicketStatus, UpdateTicketPayload};
-use crate::models::{ticket::CreateTicketPayload, DeletePayload};
+use crate::models::{ticket::CreateTicketPayload, ticket::UpdateTicketPayload, DeletePayload};
 use crate::validations::existence::ticket_exists;
 use crate::{errors::api_error::ApiError, models::ticket::Ticket};
 use axum::{
@@ -9,7 +8,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use chrono::Utc;
 use std::sync::Arc;
 use tracing::{debug, error, info};
 use uuid::Uuid;
@@ -190,155 +188,22 @@ pub async fn update_ticket(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<UpdateTicketPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
+    debug!("Received request to update ticket with ID: {}", payload.id);
+
     // Validations
     payload.validate()?;
-    ticket_exists(state.clone(), payload.id).await?;
+    ticket_exists(&state, payload.id).await?;
 
-    let ticket_id = payload.id;
-    let new_title = payload.title;
-    let new_description = payload.description;
-    let new_requester = payload.requester;
-    let new_status = payload.status;
-    let new_closed_by = payload.closed_by;
-    let new_solution = payload.solution;
-
-    let mut updated = false;
-
-    // Update `title` if provided.
-    if let Some(title) = new_title {
-        sqlx::query(r#"UPDATE tickets SET title = $1 WHERE id = $2;"#)
-            .bind(title)
-            .bind(ticket_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating title: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Update `description` if provided.
-    if let Some(description) = new_description {
-        sqlx::query(r#"UPDATE tickets SET description = $1 WHERE id = $2;"#)
-            .bind(description)
-            .bind(ticket_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating description: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Update `requester` if provided
-    if let Some(requester) = new_requester {
-        sqlx::query(r#"UPDATE tickets SET requester = $1 WHERE id = $2;"#)
-            .bind(requester)
-            .bind(ticket_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating requester: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Update `status` if provided
-    if let Some(status) = new_status {
-        // Checks previous status value
-        let previous_status: Option<TicketStatus> =
-            sqlx::query_scalar(r#"SELECT status FROM tickets WHERE id = $1"#)
-                .bind(ticket_id)
-                .fetch_optional(&state.db)
-                .await
-                .map_err(|e| {
-                    error!("Error fetching previous status: {e}");
-                    ApiError::DatabaseError(e)
-                })?;
-
-        // Update to new value
-        sqlx::query(r#"UPDATE tickets SET status = $1 WHERE id = $2;"#)
-            .bind(status.clone())
-            .bind(ticket_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating status: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-
-        // Checks if the status has changed to `Closed` or `Cancelled`
-        if status == TicketStatus::Closed || status == TicketStatus::Cancelled {
-            if let Some(prev_status) = previous_status {
-                // If the previous status was not "Closed" or "Cancelled", update the `closed_at` field
-                if prev_status != TicketStatus::Closed || prev_status != TicketStatus::Cancelled {
-                    sqlx::query(r#"UPDATE tickets SET closed_at = $1 WHERE id = $2;"#)
-                        .bind(Utc::now().naive_utc())
-                        .bind(ticket_id)
-                        .execute(&state.db)
-                        .await
-                        .map_err(|e| {
-                            error!("Error updating closed_at: {e}");
-                            ApiError::DatabaseError(e)
-                        })?;
-                }
-            }
+    match Ticket::update(&state, &payload).await {
+        Ok(ticket_id) => {
+            info!("Ticket updated! ID: {ticket_id}");
+            Ok(Json(ticket_id))
         }
-        updated = true;
+        Err(e) => {
+            error!("Error updating ticket with ID {}: {e}", payload.id);
+            Err(ApiError::from(e))
+        }
     }
-
-    // Update `closed_by` if provided.
-    if let Some(closed_by) = new_closed_by {
-        sqlx::query(r#"UPDATE tickets SET closed_by = $1 WHERE id = $2;"#)
-            .bind(closed_by)
-            .bind(ticket_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating closed_by: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Update `solution` if provided
-    if let Some(solution) = new_solution {
-        sqlx::query(r#"UPDATE tickets SET solution = $1 WHERE id = $2;"#)
-            .bind(solution)
-            .bind(ticket_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating solution: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Update `updated_at` field.
-    if updated {
-        sqlx::query(r#"UPDATE tickets SET updated_at = $1 WHERE id = $2;"#)
-            .bind(Utc::now().naive_utc())
-            .bind(ticket_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating last_name: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-    } else {
-        error!(
-            "No updates were made for the provided ticket ID: {}",
-            &ticket_id
-        );
-        return Err(ApiError::NotModified);
-    }
-
-    info!("Ticket updated! ID: {}", &ticket_id);
-    Ok((StatusCode::OK, Json(ticket_id)).into_response())
 }
 
 /// Deletes an existing ticket.
@@ -366,7 +231,7 @@ pub async fn delete_ticket(
     debug!("Received request to delete ticket with ID: {}", payload.id);
 
     // Validations
-    ticket_exists(state.clone(), payload.id).await?;
+    ticket_exists(&state, payload.id).await?;
 
     match Ticket::delete(&state, &payload).await {
         Ok(_) => {

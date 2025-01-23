@@ -107,6 +107,10 @@ impl Ticket {
         Ok(TicketRepositoryImpl::create(state, payload).await?)
     }
 
+    pub async fn update(state: &AppState, payload: &UpdateTicketPayload) -> Result<Uuid, ApiError> {
+        Ok(TicketRepositoryImpl::update(state, payload).await?)
+    }
+
     pub async fn delete(state: &AppState, payload: &DeletePayload) -> Result<(), ApiError> {
         Ok(TicketRepositoryImpl::delete(state, payload).await?)
     }
