@@ -131,22 +131,18 @@ impl User {
         Ok(user)
     }
 
-    pub async fn create(
-        state: &AppState,
-        username: &str,
-        email: Option<String>,
-        password: String,
-        first_name: Option<String>,
-        last_name: Option<String>,
-    ) -> Result<Self, ApiError> {
-        debug!("Attempting to create user with username: {}", username);
+    pub async fn create(state: &AppState, payload: &CreateUserPayload) -> Result<Self, ApiError> {
+        debug!(
+            "Attempting to create user with username: {}",
+            payload.username
+        );
 
         let new_user = Self::new(
-            &username,
-            email,
-            encrypt_password(&password)?.as_str(),
-            first_name,
-            last_name,
+            &payload.username,
+            payload.email.clone(),
+            encrypt_password(&payload.password)?.as_str(),
+            payload.first_name.clone(),
+            payload.last_name.clone(),
         );
 
         sqlx::query(r#"INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#)
@@ -162,5 +158,83 @@ impl User {
     .await?;
 
         Ok(new_user)
+    }
+
+    pub async fn update(state: &AppState, payload: &UpdateUserPayload) -> Result<Uuid, ApiError> {
+        debug!("Attempting to update user with ID: {}", payload.id);
+
+        let user_id = payload.id;
+        let new_username = &payload.username;
+        let new_email = &payload.email;
+        let new_password = &payload.password;
+        let new_first_name = &payload.first_name;
+        let new_last_name = &payload.last_name;
+
+        let mut updated = false;
+
+        // Update `username` if provided.
+        if let Some(username) = new_username {
+            sqlx::query(r#"UPDATE users SET username = $1 WHERE id = $2;"#)
+                .bind(username)
+                .bind(user_id)
+                .execute(&state.db)
+                .await?;
+            updated = true;
+        }
+
+        // Update `email` if provided.
+        if let Some(email) = new_email {
+            sqlx::query(r#"UPDATE users SET email = $1 WHERE id = $2;"#)
+                .bind(email)
+                .bind(user_id)
+                .execute(&state.db)
+                .await?;
+            updated = true;
+        }
+
+        // Encrypt and update the `password` if provided
+        if let Some(password) = new_password {
+            let encrypted_password = encrypt_password(&password)?;
+
+            sqlx::query(r#"UPDATE users SET password_hash = $1 WHERE id = $2;"#)
+                .bind(&encrypted_password)
+                .bind(user_id)
+                .execute(&state.db)
+                .await?;
+            updated = true;
+        }
+
+        // Update `first_name` if provided
+        if let Some(first_name) = new_first_name {
+            sqlx::query(r#"UPDATE users SET first_name = $1 WHERE id = $2;"#)
+                .bind(first_name)
+                .bind(user_id)
+                .execute(&state.db)
+                .await?;
+            updated = true;
+        }
+
+        // Update `last_name` if provided
+        if let Some(last_name) = new_last_name {
+            sqlx::query(r#"UPDATE users SET last_name = $1 WHERE id = $2;"#)
+                .bind(last_name)
+                .bind(user_id)
+                .execute(&state.db)
+                .await?;
+            updated = true;
+        }
+
+        // Updates `updated_at` field.
+        if updated {
+            sqlx::query(r#"UPDATE users SET updated_at = $1 WHERE id = $2;"#)
+                .bind(Utc::now().naive_utc())
+                .bind(user_id)
+                .execute(&state.db)
+                .await?;
+        } else {
+            return Err(ApiError::NotModified);
+        }
+
+        Ok(user_id)
     }
 }

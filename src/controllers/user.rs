@@ -3,7 +3,6 @@ use crate::models::{
     user::{CreateUserPayload, UpdateUserPayload},
     DeletePayload,
 };
-use crate::utils::hashing::encrypt_password;
 use crate::validations::{existence::user_exists, uniqueness::is_user_unique};
 use crate::{errors::api_error::ApiError, models::user::User};
 use axum::{
@@ -12,7 +11,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use chrono::Utc;
 use std::sync::Arc;
 use tracing::{debug, error, info};
 use uuid::Uuid;
@@ -156,16 +154,7 @@ pub async fn create_user(
     payload.validate()?;
     is_user_unique(&state, &payload.username).await?;
 
-    match User::create(
-        &state,
-        &payload.username,
-        payload.email,
-        payload.password,
-        payload.first_name,
-        payload.last_name,
-    )
-    .await
-    {
+    match User::create(&state, &payload).await {
         Ok(new_user) => {
             info!("User created! ID: {}", &new_user.id);
             Ok((StatusCode::CREATED, Json(new_user.id)))
@@ -180,13 +169,13 @@ pub async fn create_user(
     }
 }
 
-// /// Updates an existing user.
-// ///
-// /// This endpoint updates the details of an existing user.
-// /// It accepts the user ID and the new details for the user.
-// /// The endpoint validates the new name to ensure it is not empty,
-// /// does not conflict with an existing user's name, and meets length requirements.
-// /// If the user is successfully updated, it returns the UUID of the updated user.
+/// Updates an existing user.
+///
+/// This endpoint updates the details of an existing user.
+/// It accepts the user ID and the new details for the user.
+/// The endpoint validates the new name to ensure it is not empty,
+/// does not conflict with an existing user's name, and meets length requirements.
+/// If the user is successfully updated, it returns the UUID of the updated user.
 #[utoipa::path(
     put,
     path = "/api/v1/users",
@@ -206,112 +195,22 @@ pub async fn update_user(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<UpdateUserPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
+    debug!("Received request to update user with ID: {}", payload.id);
+
     // Validations
     payload.validate()?;
-    user_exists(state.clone(), payload.id).await?;
+    user_exists(&state, payload.id).await?;
 
-    let user_id = payload.id;
-    let new_username = payload.username;
-    let new_email = payload.email;
-    let new_password = payload.password;
-    let new_first_name = payload.first_name;
-    let new_last_name = payload.last_name;
-
-    let mut updated = false;
-
-    // Update `username` if provided.
-    if let Some(username) = new_username {
-        sqlx::query(r#"UPDATE users SET username = $1 WHERE id = $2;"#)
-            .bind(username)
-            .bind(user_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating username: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
+    match User::update(&state, &payload).await {
+        Ok(user_id) => {
+            info!("User updated! ID: {user_id}");
+            Ok(Json(user_id))
+        }
+        Err(e) => {
+            error!("Error updating user with ID {}: {e}", payload.id);
+            Err(ApiError::from(e))
+        }
     }
-
-    // Update `email` if provided.
-    if let Some(email) = new_email {
-        sqlx::query(r#"UPDATE users SET email = $1 WHERE id = $2;"#)
-            .bind(email)
-            .bind(user_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating email: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Encrypt and update the `password` if provided
-    if let Some(password) = new_password {
-        let encrypted_password = encrypt_password(&password)?;
-
-        sqlx::query(r#"UPDATE users SET password_hash = $1 WHERE id = $2;"#)
-            .bind(&encrypted_password)
-            .bind(user_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating password: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Update `first_name` if provided
-    if let Some(first_name) = new_first_name {
-        sqlx::query(r#"UPDATE users SET first_name = $1 WHERE id = $2;"#)
-            .bind(first_name)
-            .bind(user_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating first_name: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Update `last_name` if provided
-    if let Some(last_name) = new_last_name {
-        sqlx::query(r#"UPDATE users SET last_name = $1 WHERE id = $2;"#)
-            .bind(last_name)
-            .bind(user_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating last_name: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-        updated = true;
-    }
-
-    // Updates `updated_at` field.
-    if updated {
-        sqlx::query(r#"UPDATE users SET updated_at = $1 WHERE id = $2;"#)
-            .bind(Utc::now().naive_utc())
-            .bind(user_id)
-            .execute(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error updating last_name: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-    } else {
-        error!(
-            "No updates were made for the provided user ID: {}",
-            &user_id
-        );
-        return Err(ApiError::NotModified);
-    }
-
-    info!("User updated! ID: {}", &user_id);
-    Ok((StatusCode::OK, Json(user_id)).into_response())
 }
 
 /// Deletes an existing user.
@@ -337,7 +236,7 @@ pub async fn delete_user(
     Json(payload): Json<DeletePayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     // Validations
-    user_exists(state.clone(), payload.id).await?;
+    user_exists(&state, payload.id).await?;
 
     // Delete the user
     sqlx::query(r#"DELETE FROM users WHERE id = $1;"#)
