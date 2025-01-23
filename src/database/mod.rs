@@ -1,4 +1,5 @@
 pub mod connection;
+pub mod repositories;
 
 use sqlx::PgPool;
 
