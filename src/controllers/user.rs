@@ -14,7 +14,7 @@ use axum::{
 };
 use chrono::Utc;
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -36,16 +36,18 @@ use validator::Validate;
 pub async fn count_users(
     State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let count = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM users;"#)
-        .fetch_one(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error retrieving user count: {e}");
-            ApiError::DatabaseError(e)
-        })?;
+    debug!("Received request to retrieve user count.");
 
-    info!("Successfully retrieved user count: {count}");
-    Ok(Json(count))
+    match User::count(&state).await {
+        Ok(count) => {
+            info!("Successfully retrieved user count: {count}");
+            Ok(Json(count))
+        }
+        Err(e) => {
+            error!("Failed to retrieve user count: {e}");
+            Err(ApiError::from(e))
+        }
+    }
 }
 
 /// Retrieves a specific user by its ID.

@@ -1,6 +1,8 @@
+use crate::{database::AppState, errors::api_error::ApiError};
 use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
+use tracing::debug;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -96,5 +98,15 @@ impl User {
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
         }
+    }
+
+    pub async fn count(state: &AppState) -> Result<i64, ApiError> {
+        debug!("Attempting to count users from the database...");
+
+        let count: i64 = sqlx::query_scalar(r#"SELECT COUNT(*) FROM users;"#)
+            .fetch_one(&state.db)
+            .await?;
+
+        Ok(count)
     }
 }
