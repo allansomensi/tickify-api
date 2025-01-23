@@ -28,7 +28,7 @@ use crate::{
         // Users
         user::count_users,
         user::find_user_by_id,
-        user::show_users,
+        user::find_all_users,
         user::create_user,
         user::update_user,
         user::delete_user,

@@ -8,7 +8,7 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route("/{id}", get(user::find_user_by_id))
         .route(
             "/",
-            get(user::show_users)
+            get(user::find_all_users)
                 .post(user::create_user)
                 .put(user::update_user)
                 .delete(user::delete_user),

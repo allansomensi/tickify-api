@@ -50,6 +50,39 @@ pub async fn count_users(
     }
 }
 
+/// Retrieves a list of all users.
+///
+/// This endpoint fetches all users stored in the database.
+/// If there are no users, returns an empty array.
+#[utoipa::path(
+    get,
+    path = "/api/v1/users",
+    tags = ["Users"],
+    summary = "List all users.",
+    description = "Fetches all users stored in the database. If there are no users, returns an empty array.",
+    responses(
+        (status = 200, description = "Users retrieved successfully.", body = Vec<User>),
+        (status = 404, description = "No users found in the database."),
+        (status = 500, description = "An error occurred while retrieving the users.")
+    )
+)]
+pub async fn find_all_users(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, ApiError> {
+    debug!("Received request to retrieve all users.");
+
+    match User::find_all(&state).await {
+        Ok(users) => {
+            info!("Users listed successfully.");
+            Ok(Json(users))
+        }
+        Err(e) => {
+            error!("Error retrieving all users: {e}");
+            Err(ApiError::from(e))
+        }
+    }
+}
+
 /// Retrieves a specific user by its ID.
 ///
 /// This endpoint searches for a user with the specified ID.
@@ -89,35 +122,6 @@ pub async fn find_user_by_id(
             Err(ApiError::from(e))
         }
     }
-}
-
-/// Retrieves a list of all users.
-///
-/// This endpoint fetches all users stored in the database.
-/// If there are no users, returns an empty array.
-#[utoipa::path(
-    get,
-    path = "/api/v1/users",
-    tags = ["Users"],
-    summary = "List all users.",
-    description = "Fetches all users stored in the database. If there are no users, returns an empty array.",
-    responses(
-        (status = 200, description = "Users retrieved successfully.", body = Vec<User>),
-        (status = 404, description = "No users found in the database."),
-        (status = 500, description = "An error occurred while retrieving the users.")
-    )
-)]
-pub async fn show_users(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse, ApiError> {
-    let users = sqlx::query_as::<_, User>(r#"SELECT * FROM users;"#)
-        .fetch_all(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error listing users: {e}");
-            ApiError::DatabaseError(e)
-        })?;
-
-    info!("Users listed successfully");
-    Ok(Json(users))
 }
 
 /// Create a new user.
