@@ -5,7 +5,7 @@ use std::sync::Arc;
 pub fn create_routes(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/count", get(user::count_users))
-        .route("/{id}", get(user::search_user))
+        .route("/{id}", get(user::find_user_by_id))
         .route(
             "/",
             get(user::show_users)

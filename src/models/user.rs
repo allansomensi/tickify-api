@@ -109,4 +109,15 @@ impl User {
 
         Ok(count)
     }
+
+    pub async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<Self>, ApiError> {
+        debug!("Attempting to retrieve user with id: {id}");
+
+        let user = sqlx::query_as::<_, User>(r#"SELECT * FROM users WHERE id = $1;"#)
+            .bind(id)
+            .fetch_optional(&state.db)
+            .await?;
+
+        Ok(user)
+    }
 }

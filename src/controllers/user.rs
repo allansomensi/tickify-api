@@ -69,27 +69,24 @@ pub async fn count_users(
         (status = 500, description = "An error occurred while retrieving the user.")
     )
 )]
-pub async fn search_user(
+pub async fn find_user_by_id(
     Path(id): Path<Uuid>,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    let user = sqlx::query_as::<_, User>(r#"SELECT * FROM users WHERE id = $1;"#)
-        .bind(id)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error retrieving user with id {id}: {e}");
-            ApiError::DatabaseError(e)
-        })?;
+    debug!("Received request to retrieve user with id: {id}");
 
-    match user {
-        Some(user) => {
+    match User::find_by_id(&state, id).await {
+        Ok(Some(user)) => {
             info!("User found: {id}");
             Ok(Json(user))
         }
-        None => {
+        Ok(None) => {
             error!("No user found with id: {id}");
             Err(ApiError::NotFound)
+        }
+        Err(e) => {
+            error!("Error retrieving user with id {id}: {e}");
+            Err(ApiError::from(e))
         }
     }
 }
