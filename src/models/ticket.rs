@@ -13,6 +13,8 @@ use crate::{
     errors::api_error::ApiError,
 };
 
+use super::DeletePayload;
+
 #[derive(ToSchema, PartialEq, Clone, Serialize, Deserialize, Type)]
 #[sqlx(type_name = "ticket_status", rename_all = "snake_case")]
 pub enum TicketStatus {
@@ -99,5 +101,13 @@ impl Ticket {
 
     pub async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<Self>, ApiError> {
         Ok(TicketRepositoryImpl::find_by_id(state, id).await?)
+    }
+
+    pub async fn create(state: &AppState, payload: &CreateTicketPayload) -> Result<Self, ApiError> {
+        Ok(TicketRepositoryImpl::create(state, payload).await?)
+    }
+
+    pub async fn delete(state: &AppState, payload: &DeletePayload) -> Result<(), ApiError> {
+        Ok(TicketRepositoryImpl::delete(state, payload).await?)
     }
 }

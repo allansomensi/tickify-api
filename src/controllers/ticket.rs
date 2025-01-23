@@ -144,41 +144,24 @@ pub async fn create_ticket(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<CreateTicketPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
+    debug!(
+        "Received request to create ticket with title: {}",
+        payload.title
+    );
+
     // Validations
     payload.validate()?;
 
-    let requester_id: Uuid =
-        sqlx::query_scalar(r#"SELECT id FROM users WHERE username = $1 LIMIT 1"#)
-            .bind(&payload.requester)
-            .fetch_one(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error fetching requester ID: {e}");
-                ApiError::DatabaseError(e)
-            })?;
-
-    let new_ticket = Ticket::new(&payload.title, &payload.description, requester_id);
-
-    // Creates the ticket.
-    sqlx::query(r#"INSERT INTO tickets (id, title, description, requester, status, closed_by, solution, created_at, updated_at, closed_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"#)
-        .bind(new_ticket.id)
-        .bind(&new_ticket.title)
-        .bind(&new_ticket.description)
-        .bind(new_ticket.requester)
-        .bind(&new_ticket.status)
-        .bind(new_ticket.closed_by)
-        .bind(&new_ticket.solution)
-        .bind(new_ticket.created_at)
-        .bind(new_ticket.updated_at)
-        .bind(new_ticket.closed_at)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error creating ticket: {e}");
-            ApiError::DatabaseError(e)
-        })?;
-    info!("Ticket created! ID: {}", &new_ticket.id);
-    Ok((StatusCode::CREATED, Json(new_ticket.id)))
+    match Ticket::create(&state, &payload).await {
+        Ok(new_ticket) => {
+            info!("Ticket created! ID: {}", &new_ticket.id);
+            Ok((StatusCode::CREATED, Json(new_ticket.id)))
+        }
+        Err(e) => {
+            error!("Error creating ticket with title {}: {e}", payload.title);
+            Err(ApiError::from(e))
+        }
+    }
 }
 
 /// Updates an existing ticket.
@@ -362,7 +345,7 @@ pub async fn update_ticket(
 ///
 /// This endpoint allows tickets to delete a specific ticket by its ID.
 /// It checks if the ticket exists before attempting to delete it.
-/// If the ticket is successfully deleted, a confirmation message is returned.
+/// If the ticket is successfully deleted, a 204 status code is returned.
 #[utoipa::path(
     delete,
      path = "/api/v1/tickets",
@@ -380,19 +363,19 @@ pub async fn delete_ticket(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<DeletePayload>,
 ) -> Result<impl IntoResponse, ApiError> {
+    debug!("Received request to delete ticket with ID: {}", payload.id);
+
     // Validations
     ticket_exists(state.clone(), payload.id).await?;
 
-    // Delete the ticket
-    sqlx::query(r#"DELETE FROM tickets WHERE id = $1;"#)
-        .bind(payload.id)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error deleting ticket: {}", e);
-            ApiError::DatabaseError(e)
-        })?;
-
-    info!("Ticket deleted! ID: {}", &payload.id);
-    Ok((StatusCode::OK, Json("Ticket deleted!")))
+    match Ticket::delete(&state, &payload).await {
+        Ok(_) => {
+            info!("Ticket deleted! ID: {}", &payload.id);
+            Ok(StatusCode::NO_CONTENT)
+        }
+        Err(e) => {
+            error!("Error deleting ticket with ID {}: {e}", payload.id);
+            Err(ApiError::from(e))
+        }
+    }
 }
