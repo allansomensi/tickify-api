@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 argon2 = { version = "0.5.3", features = ["std"] }
+async-trait = "0.1.85"
 axum = "0.8.1"
 chrono = { version = "0.4.39", features = ["serde"] }
 dotenvy = "0.15.7"
