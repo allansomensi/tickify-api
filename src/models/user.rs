@@ -7,6 +7,8 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+use super::DeletePayload;
+
 #[derive(ToSchema, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
@@ -236,5 +238,16 @@ impl User {
         }
 
         Ok(user_id)
+    }
+
+    pub async fn delete(state: &AppState, payload: &DeletePayload) -> Result<(), ApiError> {
+        debug!("Attempting to delete user with ID: {}", payload.id);
+
+        sqlx::query(r#"DELETE FROM users WHERE id = $1;"#)
+            .bind(payload.id)
+            .execute(&state.db)
+            .await?;
+
+        Ok(())
     }
 }

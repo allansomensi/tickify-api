@@ -217,7 +217,7 @@ pub async fn update_user(
 ///
 /// This endpoint allows users to delete a specific user by its ID.
 /// It checks if the user exists before attempting to delete it.
-/// If the user is successfully deleted, a confirmation message is returned.
+/// If the user is successfully deleted, a 204 status code is returned.
 #[utoipa::path(
     delete,
      path = "/api/v1/users",
@@ -226,7 +226,7 @@ pub async fn update_user(
      description = "This endpoint deletes a specific user from the database using its ID.",
      request_body = DeletePayload,
      responses(
-         (status = 200, description = "User deleted successfully"),
+         (status = 204, description = "User deleted successfully"),
          (status = 404, description = "User ID not found"),
          (status = 500, description = "An error occurred while deleting the user")
      )
@@ -235,19 +235,19 @@ pub async fn delete_user(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<DeletePayload>,
 ) -> Result<impl IntoResponse, ApiError> {
+    debug!("Received request to delete user with ID: {}", payload.id);
+
     // Validations
     user_exists(&state, payload.id).await?;
 
-    // Delete the user
-    sqlx::query(r#"DELETE FROM users WHERE id = $1;"#)
-        .bind(payload.id)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error deleting user: {}", e);
-            ApiError::DatabaseError(e)
-        })?;
-
-    info!("User deleted! ID: {}", &payload.id);
-    Ok((StatusCode::OK, Json("User deleted!")))
+    match User::delete(&state, &payload).await {
+        Ok(_) => {
+            info!("User deleted! ID: {}", &payload.id);
+            Ok(StatusCode::NO_CONTENT)
+        }
+        Err(e) => {
+            error!("Error deleting user with ID {}: {e}", payload.id);
+            Err(ApiError::from(e))
+        }
+    }
 }
