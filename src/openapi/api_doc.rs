@@ -35,8 +35,8 @@ use crate::{
 
         // Tickets
         ticket::count_tickets,
-        ticket::search_ticket,
-        ticket::show_tickets,
+        ticket::find_ticket_by_id,
+        ticket::find_all_tickets,
         ticket::create_ticket,
         ticket::update_ticket,
         ticket::delete_ticket,

@@ -5,6 +5,14 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+use crate::{
+    database::{
+        repositories::ticket_repository::{TicketRepository, TicketRepositoryImpl},
+        AppState,
+    },
+    errors::api_error::ApiError,
+};
+
 #[derive(ToSchema, PartialEq, Clone, Serialize, Deserialize, Type)]
 #[sqlx(type_name = "ticket_status", rename_all = "snake_case")]
 pub enum TicketStatus {
@@ -79,5 +87,17 @@ impl Ticket {
             updated_at: Utc::now().naive_utc(),
             closed_at: None,
         }
+    }
+
+    pub async fn count(state: &AppState) -> Result<i64, ApiError> {
+        Ok(TicketRepositoryImpl::count(state).await?)
+    }
+
+    pub async fn find_all(state: &AppState) -> Result<Vec<Self>, ApiError> {
+        Ok(TicketRepositoryImpl::find_all(state).await?)
+    }
+
+    pub async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<Self>, ApiError> {
+        Ok(TicketRepositoryImpl::find_by_id(state, id).await?)
     }
 }

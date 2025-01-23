@@ -11,7 +11,7 @@ use axum::{
 };
 use chrono::Utc;
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -33,16 +33,51 @@ use validator::Validate;
 pub async fn count_tickets(
     State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let count = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM tickets;"#)
-        .fetch_one(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error retrieving ticket count: {e}");
-            ApiError::DatabaseError(e)
-        })?;
+    debug!("Received request to retrieve ticket count.");
 
-    info!("Successfully retrieved ticket count: {count}");
-    Ok(Json(count))
+    match Ticket::count(&state).await {
+        Ok(count) => {
+            info!("Successfully retrieved ticket count: {count}");
+            Ok(Json(count))
+        }
+        Err(e) => {
+            error!("Failed to retrieve ticket count: {e}");
+            Err(ApiError::from(e))
+        }
+    }
+}
+
+/// Retrieves a list of all tickets.
+///
+/// This endpoint fetches all tickets stored in the database.
+/// If there are no tickets, returns an empty array.
+#[utoipa::path(
+    get,
+    path = "/api/v1/tickets",
+    tags = ["Tickets"],
+    summary = "List all tickets.",
+    description = "Fetches all tickets stored in the database. If there are no tickets, returns an empty array.",
+    responses(
+        (status = 200, description = "Tickets retrieved successfully.", body = Vec<Ticket>),
+        (status = 404, description = "No tickets found in the database."),
+        (status = 500, description = "An error occurred while retrieving the tickets.")
+    )
+)]
+pub async fn find_all_tickets(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, ApiError> {
+    debug!("Received request to retrieve all tickets.");
+
+    match Ticket::find_all(&state).await {
+        Ok(tickets) => {
+            info!("Tickets listed successfully.");
+            Ok(Json(tickets))
+        }
+        Err(e) => {
+            error!("Error retrieving all tickets: {e}");
+            Err(ApiError::from(e))
+        }
+    }
 }
 
 /// Retrieves a specific ticket by its ID.
@@ -64,60 +99,26 @@ pub async fn count_tickets(
         (status = 500, description = "An error occurred while retrieving the ticket.")
     )
 )]
-pub async fn search_ticket(
+pub async fn find_ticket_by_id(
     Path(id): Path<Uuid>,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    let ticket = sqlx::query_as::<_, Ticket>(r#"SELECT * FROM tickets WHERE id = $1;"#)
-        .bind(id)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error retrieving ticket with id {id}: {e}");
-            ApiError::DatabaseError(e)
-        })?;
+    debug!("Received request to retrieve ticket with id: {id}");
 
-    match ticket {
-        Some(ticket) => {
+    match Ticket::find_by_id(&state, id).await {
+        Ok(Some(ticket)) => {
             info!("Ticket found: {id}");
             Ok(Json(ticket))
         }
-        None => {
+        Ok(None) => {
             error!("No ticket found with id: {id}");
             Err(ApiError::NotFound)
         }
+        Err(e) => {
+            error!("Error retrieving ticket with id {id}: {e}");
+            Err(ApiError::from(e))
+        }
     }
-}
-
-/// Retrieves a list of all tickets.
-///
-/// This endpoint fetches all tickets stored in the database.
-/// If there are no tickets, returns an empty array.
-#[utoipa::path(
-    get,
-    path = "/api/v1/tickets",
-    tags = ["Tickets"],
-    summary = "List all tickets.",
-    description = "Fetches all tickets stored in the database. If there are no tickets, returns an empty array.",
-    responses(
-        (status = 200, description = "Tickets retrieved successfully.", body = Vec<Ticket>),
-        (status = 404, description = "No tickets found in the database."),
-        (status = 500, description = "An error occurred while retrieving the tickets.")
-    )
-)]
-pub async fn show_tickets(
-    State(state): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, ApiError> {
-    let tickets = sqlx::query_as::<_, Ticket>(r#"SELECT * FROM tickets;"#)
-        .fetch_all(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error listing tickets: {e}");
-            ApiError::DatabaseError(e)
-        })?;
-
-    info!("Tickets listed successfully");
-    Ok(Json(tickets))
 }
 
 /// Create a new ticket.
