@@ -1,10 +1,9 @@
 use crate::database::AppState;
 use crate::errors::api_error::ApiError;
-use std::sync::Arc;
 use tracing::error;
 
 /// Check if there is already another user with the same username.
-pub async fn is_user_unique(state: Arc<AppState>, username: String) -> Result<(), ApiError> {
+pub async fn is_user_unique(state: &AppState, username: &str) -> Result<(), ApiError> {
     let exists = sqlx::query(r#"SELECT id FROM users WHERE username = $1;"#)
         .bind(&username)
         .fetch_optional(&state.db)

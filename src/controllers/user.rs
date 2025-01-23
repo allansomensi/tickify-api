@@ -147,38 +147,37 @@ pub async fn create_user(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<CreateUserPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
-    // Validations
-    payload.validate()?;
-    is_user_unique(state.clone(), payload.username.clone()).await?;
-
-    let new_user = User::new(
-        &payload.username,
-        payload.email,
-        encrypt_password(&payload.password)
-            .expect("Error encrypting password")
-            .as_str(),
-        payload.first_name,
-        payload.last_name,
+    debug!(
+        "Received request to create user with username: {}",
+        payload.username
     );
 
-    // Creates the user.
-    sqlx::query(r#"INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#)
-        .bind(new_user.id)
-        .bind(&new_user.username)
-        .bind(&new_user.email)
-        .bind(&new_user.password_hash)
-        .bind(&new_user.first_name)
-        .bind(&new_user.last_name)
-        .bind(new_user.created_at)
-        .bind(new_user.updated_at)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error creating user: {e}");
-            ApiError::DatabaseError(e)
-        })?;
-    info!("User created! ID: {}", &new_user.id);
-    Ok((StatusCode::CREATED, Json(new_user.id)))
+    // Validations
+    payload.validate()?;
+    is_user_unique(&state, &payload.username).await?;
+
+    match User::create(
+        &state,
+        &payload.username,
+        payload.email,
+        payload.password,
+        payload.first_name,
+        payload.last_name,
+    )
+    .await
+    {
+        Ok(new_user) => {
+            info!("User created! ID: {}", &new_user.id);
+            Ok((StatusCode::CREATED, Json(new_user.id)))
+        }
+        Err(e) => {
+            error!(
+                "Error creating user with username {}: {e}",
+                payload.username
+            );
+            Err(ApiError::from(e))
+        }
+    }
 }
 
 // /// Updates an existing user.

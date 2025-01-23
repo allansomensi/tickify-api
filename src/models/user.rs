@@ -1,4 +1,4 @@
-use crate::{database::AppState, errors::api_error::ApiError};
+use crate::{database::AppState, errors::api_error::ApiError, utils::hashing::encrypt_password};
 use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(ToSchema, FromRow, Serialize, Deserialize)]
+#[derive(ToSchema, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
     pub username: String,
@@ -129,5 +129,38 @@ impl User {
             .await?;
 
         Ok(user)
+    }
+
+    pub async fn create(
+        state: &AppState,
+        username: &str,
+        email: Option<String>,
+        password: String,
+        first_name: Option<String>,
+        last_name: Option<String>,
+    ) -> Result<Self, ApiError> {
+        debug!("Attempting to create user with username: {}", username);
+
+        let new_user = Self::new(
+            &username,
+            email,
+            encrypt_password(&password)?.as_str(),
+            first_name,
+            last_name,
+        );
+
+        sqlx::query(r#"INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#)
+    .bind(new_user.id)
+    .bind(&new_user.username)
+    .bind(&new_user.email)
+    .bind(&new_user.password_hash)
+    .bind(&new_user.first_name)
+    .bind(&new_user.last_name)
+    .bind(new_user.created_at)
+    .bind(new_user.updated_at)
+    .execute(&state.db)
+    .await?;
+
+        Ok(new_user)
     }
 }
