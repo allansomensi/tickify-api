@@ -2,6 +2,7 @@ mod config;
 mod controllers;
 mod database;
 mod errors;
+mod middlewares;
 mod models;
 mod openapi;
 mod routes;

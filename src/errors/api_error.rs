@@ -5,6 +5,8 @@ use axum::{
 };
 use thiserror::Error;
 
+use super::auth_error;
+
 #[derive(Error, Debug)]
 pub enum ApiError {
     #[error("An error occurred while connecting to the database: {0}")]
@@ -18,6 +20,9 @@ pub enum ApiError {
 
     #[error("One or more JWT errors occurred: {0}")]
     JWTError(#[from] jsonwebtoken::errors::Error),
+
+    #[error("One or more auth error occurred: {0}")]
+    AuthError(#[from] auth_error::AuthError),
 
     #[error("The provided data does not correspond to any existing resource.")]
     NotFound,
@@ -74,6 +79,14 @@ impl IntoResponse for ApiError {
                 ErrorResponse {
                     code: String::from("JWT_ERROR"),
                     message: String::from("One or more JWT errors occurred."),
+                    details: Some(e.to_string()),
+                },
+            ),
+            ApiError::AuthError(e) => (
+                StatusCode::UNAUTHORIZED,
+                ErrorResponse {
+                    code: String::from("AUTH_ERROR"),
+                    message: String::from("One or more auth errors occurred."),
                     details: Some(e.to_string()),
                 },
             ),

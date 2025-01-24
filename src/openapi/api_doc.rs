@@ -23,6 +23,7 @@ use crate::{
 
         // Auth
         auth::login,
+        auth::register,
         auth::verify,
 
         // Users
