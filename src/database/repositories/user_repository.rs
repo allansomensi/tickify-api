@@ -67,15 +67,17 @@ impl UserRepository for UserRepositoryImpl {
             encrypt_password(&payload.password)?.as_str(),
             payload.first_name.clone(),
             payload.last_name.clone(),
+            payload.role.clone(),
         );
 
-        sqlx::query(r#"INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#)
+        sqlx::query(r#"INSERT INTO users (id, username, email, password_hash, first_name, last_name, role, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"#)
     .bind(new_user.id)
     .bind(&new_user.username)
     .bind(&new_user.email)
     .bind(&new_user.password_hash)
     .bind(&new_user.first_name)
     .bind(&new_user.last_name)
+    .bind(&new_user.role)
     .bind(new_user.created_at)
     .bind(new_user.updated_at)
     .execute(&state.db)
@@ -91,6 +93,7 @@ impl UserRepository for UserRepositoryImpl {
         let new_username = &payload.username;
         let new_email = &payload.email;
         let new_password = &payload.password;
+        let new_role = &payload.role;
         let new_first_name = &payload.first_name;
         let new_last_name = &payload.last_name;
 
@@ -155,6 +158,18 @@ impl UserRepository for UserRepositoryImpl {
                 .await?;
 
             info!("Updated last_name of user with ID: {}", payload.id);
+            updated = true;
+        }
+
+        // Update `role` if provided
+        if let Some(role) = new_role {
+            sqlx::query(r#"UPDATE users SET role = $1 WHERE id = $2;"#)
+                .bind(role)
+                .bind(user_id)
+                .execute(&state.db)
+                .await?;
+
+            info!("Updated role of user with ID: {}", payload.id);
             updated = true;
         }
 

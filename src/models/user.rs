@@ -8,10 +8,24 @@ use crate::{
 };
 use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::prelude::FromRow;
+use sqlx::prelude::{FromRow, Type};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+
+#[derive(ToSchema, PartialEq, Debug, Clone, Serialize, Deserialize, Type)]
+#[sqlx(type_name = "user_role", rename_all = "snake_case")]
+pub enum Role {
+    Guest,
+    User,
+    Admin,
+}
+
+impl Default for Role {
+    fn default() -> Self {
+        Self::User
+    }
+}
 
 #[derive(ToSchema, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
@@ -21,6 +35,7 @@ pub struct User {
     pub password_hash: String,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
+    pub role: Role,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -53,6 +68,7 @@ pub struct CreateUserPayload {
         message = "Last name must be between 3 and 20 chars."
     ))]
     pub last_name: Option<String>,
+    pub role: Option<Role>,
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Validate)]
@@ -84,6 +100,7 @@ pub struct UpdateUserPayload {
         message = "Last name must be between 3 and 20 chars."
     ))]
     pub last_name: Option<String>,
+    pub role: Option<Role>,
 }
 
 impl User {
@@ -93,6 +110,7 @@ impl User {
         password: &str,
         first_name: Option<String>,
         last_name: Option<String>,
+        role: Option<Role>,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -101,6 +119,7 @@ impl User {
             password_hash: password.to_string(),
             first_name,
             last_name,
+            role: role.unwrap_or(Role::default()),
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
         }
