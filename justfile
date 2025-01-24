@@ -3,20 +3,20 @@ default:
 
 [group: 'services']
 services-up:
-    @docker compose -f compose.yaml up -d
+    @docker compose -f docker/compose.yaml up -d
 
 [group: 'services']
 services-down:
-    @docker compose -f compose.yaml down
+    @docker compose -f docker/compose.yaml down
 
 [group: 'services']
 services-stop:
-    @docker compose -f compose.yaml stop
+    @docker compose -f docker/compose.yaml stop
 
 [group: 'services']
 services-restart:
-    @docker compose -f compose.yaml down
-    @docker compose -f compose.yaml up -d
+    @docker compose -f docker/compose.yaml down
+    @docker compose -f docker/compose.yaml up -d
 
 [group: 'database']
 migrate-add MIGRATION_NAME:
