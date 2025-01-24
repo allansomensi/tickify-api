@@ -23,6 +23,10 @@ use validator::Validate;
     tags = ["Tickets"],
     summary = "Get the total count of tickets.",
     description = "This endpoint retrieves the total number of tickets stored in the database.",
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 200, description = "Ticket count retrieved successfully.", body = i32),
         (status = 500, description = "An error occurred while retrieving the ticket count.")
@@ -55,6 +59,10 @@ pub async fn count_tickets(
     tags = ["Tickets"],
     summary = "List all tickets.",
     description = "Fetches all tickets stored in the database. If there are no tickets, returns an empty array.",
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 200, description = "Tickets retrieved successfully.", body = Vec<Ticket>),
         (status = 404, description = "No tickets found in the database."),
@@ -90,6 +98,10 @@ pub async fn find_all_tickets(
     description = "This endpoint retrieves a ticket's details from the database using its ID. Returns the ticket if found, or a 404 status if not found.",
     params(
         ("id", description = "The unique identifier of the ticket to retrieve.", example = Uuid::new_v4)
+    ),
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
     ),
     responses(
         (status = 200, description = "Ticket retrieved successfully.", body = Ticket),
@@ -131,6 +143,10 @@ pub async fn find_ticket_by_id(
     summary = "Create a new ticket.",
     description = "This endpoint creates a new ticket in the database with the provided details.",
     request_body = CreateTicketPayload,
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 201, description = "Ticket created successfully.", body = Uuid),
         (status = 400, description = "Invalid input, including empty name or name too short/long."),
@@ -176,6 +192,10 @@ pub async fn create_ticket(
     summary = "Update an existing ticket.",
     description = "This endpoint updates the details of an existing ticket in the database.",
     request_body = UpdateTicketPayload,
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 200, description = "Ticket updated successfully.", body = Uuid),
         (status = 400, description = "Invalid input, including empty name or name too short/long."),
@@ -218,6 +238,10 @@ pub async fn update_ticket(
      summary = "Delete an existing ticket.",
      description = "This endpoint deletes a specific ticket from the database using its ID.",
      request_body = DeletePayload,
+     security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
      responses(
          (status = 200, description = "Ticket deleted successfully"),
          (status = 404, description = "Ticket ID not found"),

@@ -1,3 +1,12 @@
+use serde::Serialize;
+use utoipa::{
+    openapi::{
+        self,
+        security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
+    },
+    Modify,
+};
+
 use crate::{
     controllers::{auth, migrations, status, ticket, user},
     models::{status::Status, ticket::Ticket, user::User},
@@ -14,6 +23,7 @@ use crate::{
     servers(
         (url = "http://localhost:8000", description = "Local server"),
     ),
+    modifiers(&AuthToken),
     paths(
         // Status
         status::show_status,
@@ -54,3 +64,22 @@ use crate::{
     )
 )]
 pub struct ApiDoc;
+
+#[derive(Debug, Serialize)]
+struct AuthToken;
+
+impl Modify for AuthToken {
+    fn modify(&self, openapi: &mut openapi::OpenApi) {
+        if let Some(schema) = openapi.components.as_mut() {
+            schema.add_security_scheme(
+                "jwt_token",
+                SecurityScheme::Http(
+                    HttpBuilder::new()
+                        .scheme(HttpAuthScheme::Bearer)
+                        .bearer_format("JWT")
+                        .build(),
+                ),
+            );
+        }
+    }
+}

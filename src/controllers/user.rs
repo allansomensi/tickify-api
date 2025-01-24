@@ -26,6 +26,10 @@ use validator::Validate;
     tags = ["Users"],
     summary = "Get the total count of users.",
     description = "This endpoint retrieves the total number of users stored in the database.",
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 200, description = "User count retrieved successfully.", body = i32),
         (status = 500, description = "An error occurred while retrieving the user count.")
@@ -58,6 +62,10 @@ pub async fn count_users(
     tags = ["Users"],
     summary = "List all users.",
     description = "Fetches all users stored in the database. If there are no users, returns an empty array.",
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 200, description = "Users retrieved successfully.", body = Vec<User>),
         (status = 404, description = "No users found in the database."),
@@ -93,6 +101,10 @@ pub async fn find_all_users(
     description = "This endpoint retrieves a user's details from the database using its ID. Returns the user if found, or a 404 status if not found.",
     params(
         ("id", description = "The unique identifier of the user to retrieve.", example = Uuid::new_v4)
+    ),
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
     ),
     responses(
         (status = 200, description = "User retrieved successfully.", body = User),
@@ -134,6 +146,10 @@ pub async fn find_user_by_id(
     summary = "Create a new user.",
     description = "This endpoint creates a new user in the database with the provided details.",
     request_body = CreateUserPayload,
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 201, description = "User created successfully.", body = Uuid),
         (status = 400, description = "Invalid input, including empty name or name too short/long."),
@@ -183,6 +199,10 @@ pub async fn create_user(
     summary = "Update an existing user.",
     description = "This endpoint updates the details of an existing user in the database.",
     request_body = UpdateUserPayload,
+    security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
     responses(
         (status = 200, description = "User updated successfully.", body = Uuid),
         (status = 400, description = "Invalid input, including empty name or name too short/long."),
@@ -225,6 +245,10 @@ pub async fn update_user(
      summary = "Delete an existing user.",
      description = "This endpoint deletes a specific user from the database using its ID.",
      request_body = DeletePayload,
+     security(
+        (),
+        ("jwt_token" = ["jwt_token"])
+    ),
      responses(
          (status = 204, description = "User deleted successfully"),
          (status = 404, description = "User ID not found"),
