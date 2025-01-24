@@ -22,7 +22,7 @@ use validator::Validate;
     path = "/api/v1/auth/login",
     tags = ["Auth"],
     summary = "Returns a JTW.",
-    description = "Returns a JWT if the credentials passed are valid.",
+    description = "If the credentials are correct, a JWT is returned.",
     request_body = LoginPayload,
     responses(
         (status = 201, description = "Logged in successfully."),
@@ -38,11 +38,7 @@ pub async fn login(
         sqlx::query_scalar(r#"SELECT password_hash FROM users WHERE username = $1;"#)
             .bind(&payload.username)
             .fetch_optional(&state.db)
-            .await
-            .map_err(|e| {
-                error!("Error retrieving password_hash: {e}");
-                ApiError::NotFound
-            })?;
+            .await?;
 
     let password_hash = match password_hash {
         Some(hash) => hash,
@@ -65,9 +61,8 @@ pub async fn login(
 
 /// Register a new user.
 ///
-/// This endpoint creates a new user by providing its details.
-/// Validates the user's name for length and emptiness, checks for duplicates,
-/// and inserts the new user into the database if all validations pass.
+/// This endpoint registers a new user in the database.
+/// It is essentially the same as the `create_user` handler, but does not require authentication.
 #[utoipa::path(
     post,
     path = "/api/v1/auth/register",
@@ -76,7 +71,7 @@ pub async fn login(
     description = "This endpoint register a new user in the database with the provided details.",
     request_body = CreateUserPayload,
     responses(
-        (status = 201, description = "User created successfully.", body = Uuid),
+        (status = 201, description = "User registered successfully.", body = Uuid),
         (status = 400, description = "Invalid input, including empty name or name too short/long."),
         (status = 409, description = "Conflict: User with the same name already exists."),
         (status = 500, description = "An error occurred while creating the user.")
@@ -116,10 +111,10 @@ pub async fn register(
     path = "/api/v1/auth/verify",
     tags = ["Auth"],
     summary = "Verify JWT.",
-    description = "Checks if a JWT is valid.",
+    description = "Verifies if a JWT is still valid.",
     request_body = VerifyTokenPayload,
     responses(
-        (status = 201, description = "JWT provided is valid."),
+        (status = 201, description = "Token is valid!"),
     )
 )]
 pub async fn verify(

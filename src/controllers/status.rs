@@ -6,7 +6,7 @@ use crate::{
 use axum::{extract::State, response::IntoResponse, Json};
 use chrono::Utc;
 use std::{env, sync::Arc};
-use tracing::{error, info};
+use tracing::info;
 
 /// Retrieves the current status of the API, including the database connection status.
 /// Provides information on the database version, maximum connections, and currently open connections.
@@ -26,32 +26,20 @@ pub async fn show_status(
 ) -> Result<impl IntoResponse, ApiError> {
     let version = sqlx::query_scalar::<_, String>(r#"SHOW server_version;"#)
         .fetch_one(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error retrieving database version: {e}");
-            ApiError::DatabaseError(e)
-        })?;
+        .await?;
 
-    let max_connections = sqlx::query_scalar::<_, String>(r#"SHOW max_connections;"#)
+    let max_connections: i64 = sqlx::query_scalar::<_, String>(r#"SHOW max_connections;"#)
         .fetch_one(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error retrieving database max connections: {e}");
-            ApiError::DatabaseError(e)
-        })?
-        .parse::<i64>()
+        .await?
+        .parse()
         .expect("Error parsing max_connections as i64");
 
     let opened_connections = sqlx::query_scalar::<_, i64>(
         r#"SELECT count(*) FROM pg_stat_activity WHERE datname = $1;"#,
     )
-    .bind(env::var("POSTGRES_DB").unwrap())
+    .bind(env::var("POSTGRES_DB").expect("Error loading POSTGRES_DB"))
     .fetch_one(&state.db)
-    .await
-    .map_err(|e| {
-        error!("Error retrieving database opened connections: {e}");
-        ApiError::DatabaseError(e)
-    })?;
+    .await?;
 
     let database = Database {
         version,

@@ -30,7 +30,7 @@ pub async fn authorize(
 
     let (_bearer, token) = (header.next(), header.next());
 
-    let token_data = match decode_jwt(token.unwrap().to_string()) {
+    let token_data = match decode_jwt(token.expect("Error reading token").to_string()) {
         Ok(data) => data,
         Err(_) => return Err(ApiError::from(AuthError::InvalidToken)),
     };

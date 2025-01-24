@@ -1,3 +1,7 @@
+use crate::{
+    controllers::{auth, migrations, status, ticket, user},
+    models::{status::Status, ticket::Ticket, user::User},
+};
 use serde::Serialize;
 use utoipa::{
     openapi::{
@@ -5,11 +9,6 @@ use utoipa::{
         security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
     },
     Modify,
-};
-
-use crate::{
-    controllers::{auth, migrations, status, ticket, user},
-    models::{status::Status, ticket::Ticket, user::User},
 };
 
 #[derive(utoipa::OpenApi)]

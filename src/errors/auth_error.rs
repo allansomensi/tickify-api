@@ -1,11 +1,9 @@
-use thiserror::Error;
-
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum AuthError {
-    #[error("Missing token")]
+    #[error("Authorization token is missing in the request. Please provide a valid JWT token.")]
     MissingToken,
-    #[error("Empty header")]
+    #[error("Authorization header cannot be empty. Please provide a valid JWT token.")]
     EmptyHeader,
-    #[error("Invalid Token")]
+    #[error("Invalid JWT token. Please provide a valid token.")]
     InvalidToken,
 }

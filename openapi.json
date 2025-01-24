@@ -26,7 +26,7 @@
                     "Auth"
                 ],
                 "summary": "Returns a JTW.",
-                "description": "Returns a JWT if the credentials passed are valid.",
+                "description": "If the credentials are correct, a JWT is returned.",
                 "operationId": "login",
                 "requestBody": {
                     "content": {
@@ -51,13 +51,55 @@
                 }
             }
         },
+        "/api/v1/auth/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user.",
+                "description": "This endpoint register a new user in the database with the provided details.",
+                "operationId": "register",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateUserPayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input, including empty name or name too short/long."
+                    },
+                    "409": {
+                        "description": "Conflict: User with the same name already exists."
+                    },
+                    "500": {
+                        "description": "An error occurred while creating the user."
+                    }
+                }
+            }
+        },
         "/api/v1/auth/verify": {
             "post": {
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Verify JWT.",
-                "description": "Checks if a JWT is valid.",
+                "description": "Verifies if a JWT is still valid.",
                 "operationId": "verify",
                 "requestBody": {
                     "content": {
@@ -71,7 +113,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "JWT provided is valid."
+                        "description": "Token is valid!"
                     }
                 }
             }
@@ -123,6 +165,260 @@
                 }
             }
         },
+        "/api/v1/tickets": {
+            "get": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "List all tickets.",
+                "description": "Fetches all tickets stored in the database. If there are no tickets, returns an empty array.",
+                "operationId": "find_all_tickets",
+                "responses": {
+                    "200": {
+                        "description": "Tickets retrieved successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Ticket"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No tickets found in the database."
+                    },
+                    "500": {
+                        "description": "An error occurred while retrieving the tickets."
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "Update an existing ticket.",
+                "description": "This endpoint updates the details of an existing ticket in the database.",
+                "operationId": "update_ticket",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTicketPayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ticket updated successfully.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input, including empty name or name too short/long."
+                    },
+                    "404": {
+                        "description": "Ticket ID not found."
+                    },
+                    "409": {
+                        "description": "Conflict: Ticket with the same name already exists."
+                    },
+                    "500": {
+                        "description": "An error occurred while updating the ticket."
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "Create a new ticket.",
+                "description": "This endpoint creates a new ticket in the database with the provided details.",
+                "operationId": "create_ticket",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateTicketPayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ticket created successfully.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input, including empty name or name too short/long."
+                    },
+                    "409": {
+                        "description": "Conflict: Ticket with the same name already exists."
+                    },
+                    "500": {
+                        "description": "An error occurred while creating the ticket."
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "Delete an existing ticket.",
+                "description": "This endpoint deletes a specific ticket from the database using its ID.",
+                "operationId": "delete_ticket",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeletePayload"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ticket deleted successfully"
+                    },
+                    "404": {
+                        "description": "Ticket ID not found"
+                    },
+                    "500": {
+                        "description": "An error occurred while deleting the ticket"
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/v1/tickets/count": {
+            "get": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "Get the total count of tickets.",
+                "description": "This endpoint retrieves the total number of tickets stored in the database.",
+                "operationId": "count_tickets",
+                "responses": {
+                    "200": {
+                        "description": "Ticket count retrieved successfully.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "integer",
+                                    "format": "int32"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "An error occurred while retrieving the ticket count."
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/v1/tickets/{id}": {
+            "get": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "Get a specific ticket by ID.",
+                "description": "This endpoint retrieves a ticket's details from the database using its ID. Returns the ticket if found, or a 404 status if not found.",
+                "operationId": "find_ticket_by_id",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The unique identifier of the ticket to retrieve.",
+                        "required": true,
+                        "example": "80ee611f-b871-4d0f-abdf-f57b54a89f6a"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket retrieved successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Ticket"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No ticket found with the specified ID."
+                    },
+                    "500": {
+                        "description": "An error occurred while retrieving the ticket."
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "tags": [
@@ -130,7 +426,7 @@
                 ],
                 "summary": "List all users.",
                 "description": "Fetches all users stored in the database. If there are no users, returns an empty array.",
-                "operationId": "show_users",
+                "operationId": "find_all_users",
                 "responses": {
                     "200": {
                         "description": "Users retrieved successfully.",
@@ -151,7 +447,15 @@
                     "500": {
                         "description": "An error occurred while retrieving the users."
                     }
-                }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
             },
             "put": {
                 "tags": [
@@ -194,7 +498,15 @@
                     "500": {
                         "description": "An error occurred while updating the user."
                     }
-                }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
             },
             "post": {
                 "tags": [
@@ -234,7 +546,15 @@
                     "500": {
                         "description": "An error occurred while creating the user."
                     }
-                }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -254,7 +574,7 @@
                     "required": true
                 },
                 "responses": {
-                    "200": {
+                    "204": {
                         "description": "User deleted successfully"
                     },
                     "404": {
@@ -263,7 +583,15 @@
                     "500": {
                         "description": "An error occurred while deleting the user"
                     }
-                }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
             }
         },
         "/api/v1/users/count": {
@@ -289,7 +617,15 @@
                     "500": {
                         "description": "An error occurred while retrieving the user count."
                     }
-                }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
             }
         },
         "/api/v1/users/{id}": {
@@ -299,14 +635,14 @@
                 ],
                 "summary": "Get a specific user by ID.",
                 "description": "This endpoint retrieves a user's details from the database using its ID. Returns the user if found, or a 404 status if not found.",
-                "operationId": "search_user",
+                "operationId": "find_user_by_id",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
                         "description": "The unique identifier of the user to retrieve.",
                         "required": true,
-                        "example": "e1af2946-c462-4541-a788-c912458c995c"
+                        "example": "07b623c4-a90f-4908-93b4-6f3417e4de4e"
                     }
                 ],
                 "responses": {
@@ -326,12 +662,39 @@
                     "500": {
                         "description": "An error occurred while retrieving the user."
                     }
-                }
+                },
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
             }
         }
     },
     "components": {
         "schemas": {
+            "CreateTicketPayload": {
+                "type": "object",
+                "required": [
+                    "title",
+                    "description",
+                    "requester"
+                ],
+                "properties": {
+                    "description": {
+                        "type": "string"
+                    },
+                    "requester": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                }
+            },
             "CreateUserPayload": {
                 "type": "object",
                 "required": [
@@ -359,6 +722,16 @@
                     },
                     "password": {
                         "type": "string"
+                    },
+                    "role": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/Role"
+                            }
+                        ]
                     },
                     "username": {
                         "type": "string"
@@ -424,6 +797,14 @@
                     }
                 }
             },
+            "Role": {
+                "type": "string",
+                "enum": [
+                    "User",
+                    "Moderator",
+                    "Admin"
+                ]
+            },
             "Status": {
                 "type": "object",
                 "required": [
@@ -442,6 +823,130 @@
             },
             "String": {
                 "type": "string"
+            },
+            "Ticket": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "description",
+                    "requester",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "closed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "closed_by": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "requester": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "solution": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TicketStatus"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "TicketStatus": {
+                "type": "string",
+                "enum": [
+                    "Open",
+                    "InProgress",
+                    "Closed",
+                    "Reopened",
+                    "Paused",
+                    "Cancelled"
+                ]
+            },
+            "UpdateTicketPayload": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "closed_by": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "requester": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "solution": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/TicketStatus"
+                            }
+                        ]
+                    },
+                    "title": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
             },
             "UpdateUserPayload": {
                 "type": "object",
@@ -477,6 +982,16 @@
                             "null"
                         ]
                     },
+                    "role": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/Role"
+                            }
+                        ]
+                    },
                     "username": {
                         "type": [
                             "string",
@@ -491,6 +1006,7 @@
                     "id",
                     "username",
                     "password_hash",
+                    "role",
                     "created_at",
                     "updated_at"
                 ],
@@ -524,6 +1040,9 @@
                     "password_hash": {
                         "type": "string"
                     },
+                    "role": {
+                        "$ref": "#/components/schemas/Role"
+                    },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
@@ -544,6 +1063,13 @@
                     }
                 }
             }
+        },
+        "securitySchemes": {
+            "jwt_token": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
         }
     },
     "tags": [
@@ -562,6 +1088,10 @@
         {
             "name": "Users",
             "description": "Users endpoints"
+        },
+        {
+            "name": "Tickets",
+            "description": "Tickets endpoints"
         }
     ]
 }
