@@ -78,7 +78,7 @@ pub struct UpdateTicketPayload {
 impl Ticket {
     pub fn new(title: &str, description: &str, requester: Uuid) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Uuid::now_v7(),
             title: title.to_string(),
             description: description.to_string(),
             requester,
