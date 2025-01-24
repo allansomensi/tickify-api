@@ -14,10 +14,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 #[derive(ToSchema, PartialEq, Debug, Clone, Serialize, Deserialize, Type)]
-#[sqlx(type_name = "user_role", rename_all = "snake_case")]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
+#[sqlx(type_name = "user_role", rename_all = "lowercase")]
 pub enum Role {
-    Guest,
     User,
+    Moderator,
     Admin,
 }
 

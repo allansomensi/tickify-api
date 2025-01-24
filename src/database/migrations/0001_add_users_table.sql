@@ -1,4 +1,4 @@
-CREATE TYPE user_role AS ENUM ('guest', 'user', 'admin');
+CREATE TYPE user_role AS ENUM ('user', 'moderator', 'admin');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,

@@ -1,10 +1,4 @@
-use chrono::{NaiveDateTime, Utc};
-use serde::{Deserialize, Serialize};
-use sqlx::prelude::{FromRow, Type};
-use utoipa::ToSchema;
-use uuid::Uuid;
-use validator::Validate;
-
+use super::DeletePayload;
 use crate::{
     database::{
         repositories::ticket_repository::{TicketRepository, TicketRepositoryImpl},
@@ -12,11 +6,16 @@ use crate::{
     },
     errors::api_error::ApiError,
 };
-
-use super::DeletePayload;
+use chrono::{NaiveDateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::prelude::{FromRow, Type};
+use utoipa::ToSchema;
+use uuid::Uuid;
+use validator::Validate;
 
 #[derive(ToSchema, PartialEq, Clone, Serialize, Deserialize, Type)]
-#[sqlx(type_name = "ticket_status", rename_all = "snake_case")]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
+#[sqlx(type_name = "ticket_status", rename_all = "lowercase")]
 pub enum TicketStatus {
     Open,
     InProgress,
