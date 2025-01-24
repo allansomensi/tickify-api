@@ -1,4 +1,5 @@
 use crate::models::jwt::Claims;
+use axum::http::StatusCode;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use std::{
     env,
@@ -43,4 +44,15 @@ pub fn validate_jwt(token: &str) -> Result<(), jsonwebtoken::errors::Error> {
         &validation,
     )?;
     Ok(())
+}
+
+pub fn decode_jwt(token: String) -> Result<TokenData<Claims>, StatusCode> {
+    let secret = env::var("JWT_SECRET").expect("Error reading JWT_SECRET env var");
+    let result: Result<TokenData<Claims>, StatusCode> = decode(
+        &token,
+        &DecodingKey::from_secret(secret.as_ref()),
+        &Validation::default(),
+    )
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR);
+    result
 }
