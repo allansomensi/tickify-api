@@ -1,7 +1,9 @@
 use crate::database::AppState;
+use crate::models::user::{Role, User};
 use crate::models::{ticket::CreateTicketPayload, ticket::UpdateTicketPayload, DeletePayload};
 use crate::validations::existence::ticket_exists;
 use crate::{errors::api_error::ApiError, models::ticket::Ticket};
+use axum::Extension;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -112,8 +114,13 @@ pub async fn find_all_tickets(
 pub async fn find_ticket_by_id(
     Path(id): Path<Uuid>,
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
 ) -> impl IntoResponse {
     debug!("Received request to retrieve ticket with id: {id}");
+
+    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
+        return Err(ApiError::Unauthorized);
+    }
 
     match Ticket::find_by_id(&state, id).await {
         Ok(Some(ticket)) => {
@@ -250,9 +257,14 @@ pub async fn update_ticket(
  )]
 pub async fn delete_ticket(
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
     Json(payload): Json<DeletePayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to delete ticket with ID: {}", payload.id);
+
+    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
+        return Err(ApiError::Unauthorized);
+    }
 
     // Validations
     ticket_exists(&state, payload.id).await?;
