@@ -25,7 +25,7 @@ use validator::Validate;
     description = "If the credentials are correct, a JWT is returned.",
     request_body = LoginPayload,
     responses(
-        (status = 201, description = "Logged in successfully."),
+        (status = 200, description = "Logged in successfully."),
         (status = 401, description = "Incorrect password, unauthorized."),
         (status = 404, description = "User not found."),
     )
@@ -114,7 +114,7 @@ pub async fn register(
     description = "Verifies if a JWT is still valid.",
     request_body = VerifyTokenPayload,
     responses(
-        (status = 201, description = "Token is valid!"),
+        (status = 200, description = "Token is valid!"),
     )
 )]
 pub async fn verify(
