@@ -1,21 +1,24 @@
 use crate::models::jwt::Claims;
 use axum::http::StatusCode;
+use chrono::{Duration, TimeDelta, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
-use std::{
-    env,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::env;
 
 pub fn generate_jwt(username: &str) -> String {
-    let expiration = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        + 3600;
+    let now = Utc::now();
+    let expire: TimeDelta = Duration::seconds(
+        env::var("JWT_EXPIRATION_TIME")
+            .expect("Error reading JWT_EXPIRATION_TIME")
+            .parse()
+            .expect("Invalid JWT_EXPIRATION_TIME value"),
+    );
+    let exp: usize = (now + expire).timestamp() as usize;
+    let iat: usize = now.timestamp() as usize;
 
     let claims = Claims {
+        iat,
         sub: username.to_string(),
-        exp: expiration as usize,
+        exp,
     };
 
     let token = encode(
