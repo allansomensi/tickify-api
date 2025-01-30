@@ -1,5 +1,5 @@
 use crate::{
-    controllers::{auth, migrations, status, ticket, user},
+    controllers::{auth, export, migrations, status, ticket, user},
     models::{status::Status, ticket::Ticket, user::User},
 };
 use serde::Serialize;
@@ -50,6 +50,9 @@ use utoipa::{
         ticket::create_ticket,
         ticket::update_ticket,
         ticket::delete_ticket,
+
+        // Export
+        export::ticket_to_pdf,
     ),
     components(
         schemas(Status, User, Ticket)

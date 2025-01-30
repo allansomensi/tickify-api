@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod export;
 pub mod migrations;
 pub mod status;
 pub mod swagger;
@@ -16,6 +17,7 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             Router::new()
                 .nest("/users", user::create_routes(state.clone()))
                 .nest("/tickets", ticket::create_routes(state.clone()))
+                .nest("/export", export::create_routes(state.clone()))
                 .layer(middleware::from_fn_with_state(state.clone(), authorize))
                 .nest("/auth", auth::create_routes(state.clone()))
                 .nest("/status", status::create_routes(state.clone()))

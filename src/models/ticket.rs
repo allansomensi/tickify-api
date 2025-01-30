@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(ToSchema, PartialEq, Clone, Serialize, Deserialize, Type)]
+#[derive(ToSchema, PartialEq, Clone, Serialize, Deserialize, Type, Debug)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 #[sqlx(type_name = "ticket_status", rename_all = "lowercase")]
 pub enum TicketStatus {
@@ -23,6 +23,19 @@ pub enum TicketStatus {
     Reopened,
     Paused,
     Cancelled,
+}
+
+impl ToString for TicketStatus {
+    fn to_string(&self) -> String {
+        match self {
+            TicketStatus::Open => "Open".to_string(),
+            TicketStatus::InProgress => "InProgress".to_string(),
+            TicketStatus::Closed => "Closed".to_string(),
+            TicketStatus::Reopened => "Reopened".to_string(),
+            TicketStatus::Paused => "Paused".to_string(),
+            TicketStatus::Cancelled => "Cancelled".to_string(),
+        }
+    }
 }
 
 #[derive(ToSchema, FromRow, Serialize, Deserialize)]
@@ -37,6 +50,19 @@ pub struct Ticket {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub closed_at: Option<NaiveDateTime>,
+}
+
+pub struct TicketView {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+    pub requester: String,
+    pub status: String,
+    pub closed_by: String,
+    pub solution: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub closed_at: String,
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Validate)]

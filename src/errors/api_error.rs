@@ -21,6 +21,9 @@ pub enum ApiError {
     #[error("One or more JWT errors occurred: {0}")]
     JWTError(#[from] jsonwebtoken::errors::Error),
 
+    #[error("One or more export error occurred: {0}")]
+    ExportError(#[from] lopdf::Error),
+
     #[error("One or more auth error occurred: {0}")]
     AuthError(#[from] auth_error::AuthError),
 
@@ -79,6 +82,14 @@ impl IntoResponse for ApiError {
                 ErrorResponse {
                     code: String::from("JWT_ERROR"),
                     message: String::from("One or more JWT errors occurred."),
+                    details: Some(e.to_string()),
+                },
+            ),
+            ApiError::ExportError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                ErrorResponse {
+                    code: String::from("EXPORT_ERROR"),
+                    message: String::from("One or more export errors occurred."),
                     details: Some(e.to_string()),
                 },
             ),

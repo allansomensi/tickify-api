@@ -2,6 +2,7 @@ mod config;
 mod controllers;
 mod database;
 mod errors;
+mod export;
 mod middlewares;
 mod models;
 mod openapi;
@@ -23,5 +24,6 @@ async fn main() {
             std::process::exit(1);
         }
     }
+
     server::run().await.unwrap();
 }
