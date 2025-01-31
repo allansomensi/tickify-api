@@ -2,6 +2,7 @@
     "material-icon-theme.folders.associations": {
         "openapi": "docs",
         "migrations": "dump",
-        "repositories": "element"
+        "repositories": "element",
+        "csv": "meta"
     }
 }

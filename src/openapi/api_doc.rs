@@ -53,6 +53,7 @@ use utoipa::{
 
         // Export
         export::ticket_to_pdf,
+        export::ticket_to_csv,
     ),
     components(
         schemas(Status, User, Ticket)

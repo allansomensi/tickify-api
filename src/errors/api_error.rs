@@ -1,14 +1,14 @@
+use super::{
+    auth_error,
+    config_error::{self, ConfigError},
+    export_error::{self, ExportError},
+};
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use thiserror::Error;
-
-use super::{
-    auth_error,
-    config_error::{self, ConfigError},
-};
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -25,7 +25,7 @@ pub enum ApiError {
     JWTError(#[from] jsonwebtoken::errors::Error),
 
     #[error("One or more export errors occurred: {0}")]
-    ExportError(#[from] lopdf::Error),
+    ExportError(#[from] export_error::ExportError),
 
     #[error("One or more server errors occurred: {0}")]
     ServerError(#[from] axum::Error),
@@ -183,5 +183,17 @@ impl IntoResponse for ApiError {
 impl From<std::env::VarError> for ApiError {
     fn from(e: std::env::VarError) -> ApiError {
         ApiError::ConfigError(ConfigError::EnvVarNotFound(e))
+    }
+}
+
+impl From<lopdf::Error> for ApiError {
+    fn from(e: lopdf::Error) -> ApiError {
+        ApiError::ExportError(ExportError::PDFError(e))
+    }
+}
+
+impl From<csv::Error> for ApiError {
+    fn from(e: csv::Error) -> ApiError {
+        ApiError::ExportError(ExportError::CSVError(e))
     }
 }
