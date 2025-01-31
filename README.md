@@ -17,6 +17,7 @@ Tickify is a support ticket management API built in **Rust** using **Axum**. It 
 - **CORS Support** to manage cross-origin requests
 - **Migrations** with `sqlx` for database versioning
 - **Utility scripts** with `just`
+- **Ticket export** to `PDF` and `CSV`
 
 ---
 

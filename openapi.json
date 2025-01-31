@@ -39,7 +39,7 @@
                     "required": true
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Logged in successfully."
                     },
                     "401": {
@@ -112,10 +112,66 @@
                     "required": true
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Token is valid!"
                     }
                 }
+            }
+        },
+        "/api/v1/export/csv/ticket/{id}": {
+            "get": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "Generates a ticket in CSV.",
+                "description": "Generates a CSV with the ticket information by its ID.",
+                "operationId": "ticket_to_csv",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The unique identifier of the ticket.",
+                        "required": true,
+                        "example": "c3a193ef-746a-4af1-953f-6081e6a42d9e"
+                    }
+                ],
+                "responses": {},
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/v1/export/pdf/ticket/{id}": {
+            "get": {
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "Generates a ticket in PDF.",
+                "description": "Generates a PDF with the ticket information by its ID.",
+                "operationId": "ticket_to_pdf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The unique identifier of the ticket.",
+                        "required": true,
+                        "example": "8cc053f7-12d9-4a84-a913-8ae9b799395c"
+                    }
+                ],
+                "responses": {},
+                "security": [
+                    {},
+                    {
+                        "jwt_token": [
+                            "jwt_token"
+                        ]
+                    }
+                ]
             }
         },
         "/api/v1/migrations": {
@@ -388,7 +444,7 @@
                         "in": "path",
                         "description": "The unique identifier of the ticket to retrieve.",
                         "required": true,
-                        "example": "80ee611f-b871-4d0f-abdf-f57b54a89f6a"
+                        "example": "68dfbe3f-e9a2-474b-82ac-514e27d03ba6"
                     }
                 ],
                 "responses": {
@@ -642,7 +698,7 @@
                         "in": "path",
                         "description": "The unique identifier of the user to retrieve.",
                         "required": true,
-                        "example": "07b623c4-a90f-4908-93b4-6f3417e4de4e"
+                        "example": "c25c3824-4201-46a6-b92c-118ebfc67190"
                     }
                 ],
                 "responses": {
