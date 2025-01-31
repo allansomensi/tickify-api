@@ -12,7 +12,7 @@ mod utils;
 mod validations;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), errors::api_error::ApiError> {
     println!("🌟 Tickify API 🌟");
 
     match config::Config::init() {
@@ -20,10 +20,10 @@ async fn main() {
             tracing::info!("✅ Configurations loaded!");
         }
         Err(e) => {
-            tracing::error!("❌ Error loading configurations: {:?}", e);
+            tracing::error!("❌ Error loading configurations: {e}");
             std::process::exit(1);
         }
     }
 
-    server::run().await.unwrap();
+    Ok(server::run().await?)
 }

@@ -52,7 +52,7 @@ pub async fn login(
         return Err(ApiError::Unauthorized);
     }
 
-    let token = generate_jwt(&payload.username);
+    let token = generate_jwt(&payload.username)?;
 
     info!("Login successful for user: {}", payload.username);
 

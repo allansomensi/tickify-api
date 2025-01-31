@@ -24,7 +24,7 @@ use tracing::info;
 pub async fn show_status(
     State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let version = sqlx::query_scalar::<_, String>(r#"SHOW server_version;"#)
+    let version: String = sqlx::query_scalar(r#"SHOW server_version;"#)
         .fetch_one(&state.db)
         .await?;
 
@@ -34,12 +34,11 @@ pub async fn show_status(
         .parse()
         .expect("Error parsing max_connections as i64");
 
-    let opened_connections = sqlx::query_scalar::<_, i64>(
-        r#"SELECT count(*) FROM pg_stat_activity WHERE datname = $1;"#,
-    )
-    .bind(env::var("POSTGRES_DB").expect("Error loading POSTGRES_DB"))
-    .fetch_one(&state.db)
-    .await?;
+    let opened_connections: i64 =
+        sqlx::query_scalar(r#"SELECT count(*) FROM pg_stat_activity WHERE datname = $1;"#)
+            .bind(env::var("POSTGRES_DB")?)
+            .fetch_one(&state.db)
+            .await?;
 
     let database = Database {
         version,

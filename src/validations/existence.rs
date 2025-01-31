@@ -7,11 +7,7 @@ pub async fn user_exists(state: &AppState, user_id: Uuid) -> Result<(), ApiError
     let exists = sqlx::query(r#"SELECT id FROM users WHERE id = $1;"#)
         .bind(user_id)
         .fetch_optional(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error fetching user by ID: {e}");
-            ApiError::DatabaseError(e)
-        })?
+        .await?
         .is_some();
 
     if !exists {
@@ -27,11 +23,7 @@ pub async fn ticket_exists(state: &AppState, ticket_id: Uuid) -> Result<(), ApiE
     let exists = sqlx::query(r#"SELECT id FROM tickets WHERE id = $1;"#)
         .bind(ticket_id)
         .fetch_optional(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error fetching ticket by ID: {e}");
-            ApiError::DatabaseError(e)
-        })?
+        .await?
         .is_some();
 
     if !exists {

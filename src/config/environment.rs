@@ -1,3 +1,6 @@
-pub fn load_environment() {
-    dotenvy::dotenv().expect("Failed to load .env");
+use crate::errors::config_error::ConfigError;
+
+pub fn load_environment() -> Result<(), ConfigError> {
+    dotenvy::dotenv()?;
+    Ok(())
 }

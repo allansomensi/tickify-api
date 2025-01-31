@@ -2,6 +2,13 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
 
+#[derive(Serialize, Deserialize)]
+pub struct Claims {
+    pub iat: usize,
+    pub sub: String,
+    pub exp: usize,
+}
+
 #[derive(Deserialize, Serialize, ToSchema, Validate)]
 pub struct LoginPayload {
     #[validate(length(min = 3, message = "Password must be between 3 and 20 characters long"))]

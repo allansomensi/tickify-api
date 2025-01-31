@@ -7,11 +7,7 @@ pub async fn is_user_unique(state: &AppState, username: &str) -> Result<(), ApiE
     let exists = sqlx::query(r#"SELECT id FROM users WHERE username = $1;"#)
         .bind(&username)
         .fetch_optional(&state.db)
-        .await
-        .map_err(|e| {
-            error!("Error checking for existing username: {e}");
-            ApiError::DatabaseError(e)
-        })?
+        .await?
         .is_some();
 
     if exists {

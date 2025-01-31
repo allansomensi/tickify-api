@@ -11,10 +11,9 @@ pub fn encrypt_password(password: &str) -> Result<String, ApiError> {
 
     let argon2 = Argon2::default();
 
-    argon2
+    Ok(argon2
         .hash_password(password.as_bytes(), &salt)
-        .map(|hashed_password| hashed_password.to_string())
-        .map_err(ApiError::EncryptionError)
+        .map(|hashed_password| hashed_password.to_string())?)
 }
 
 /// Verifies that a plaintext password matches the stored hash.

@@ -5,7 +5,10 @@ use axum::{
 };
 use thiserror::Error;
 
-use super::auth_error;
+use super::{
+    auth_error,
+    config_error::{self, ConfigError},
+};
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -21,11 +24,17 @@ pub enum ApiError {
     #[error("One or more JWT errors occurred: {0}")]
     JWTError(#[from] jsonwebtoken::errors::Error),
 
-    #[error("One or more export error occurred: {0}")]
+    #[error("One or more export errors occurred: {0}")]
     ExportError(#[from] lopdf::Error),
 
-    #[error("One or more auth error occurred: {0}")]
+    #[error("One or more server errors occurred: {0}")]
+    ServerError(#[from] axum::Error),
+
+    #[error("One or more auth errors occurred: {0}")]
     AuthError(#[from] auth_error::AuthError),
+
+    #[error("One or more config errors occurred: {0}")]
+    ConfigError(#[from] config_error::ConfigError),
 
     #[error("The provided data does not correspond to any existing resource.")]
     NotFound,
@@ -93,11 +102,27 @@ impl IntoResponse for ApiError {
                     details: Some(e.to_string()),
                 },
             ),
+            ApiError::ServerError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                ErrorResponse {
+                    code: String::from("SERVER_ERROR"),
+                    message: String::from("One or more server errors occurred."),
+                    details: Some(e.to_string()),
+                },
+            ),
             ApiError::AuthError(e) => (
                 StatusCode::UNAUTHORIZED,
                 ErrorResponse {
                     code: String::from("AUTH_ERROR"),
                     message: String::from("One or more auth errors occurred."),
+                    details: Some(e.to_string()),
+                },
+            ),
+            ApiError::ConfigError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                ErrorResponse {
+                    code: String::from("CONFIG_ERROR"),
+                    message: String::from("One or more config errors occurred."),
                     details: Some(e.to_string()),
                 },
             ),
@@ -152,5 +177,11 @@ impl IntoResponse for ApiError {
         };
 
         (status_code, Json(error_response)).into_response()
+    }
+}
+
+impl From<std::env::VarError> for ApiError {
+    fn from(e: std::env::VarError) -> ApiError {
+        ApiError::ConfigError(ConfigError::EnvVarNotFound(e))
     }
 }
