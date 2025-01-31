@@ -53,6 +53,7 @@ use utoipa::{
 
         // Export
         export::ticket_to_pdf,
+        export::tickets_to_csv,
         export::ticket_to_csv,
     ),
     components(

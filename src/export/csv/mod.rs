@@ -1,7 +1,7 @@
 use crate::{errors::api_error::ApiError, models::ticket::TicketView};
 use csv::WriterBuilder;
 
-pub async fn create_ticket_csv(ticket: TicketView) -> Result<Vec<u8>, ApiError> {
+pub async fn create_tickets_csv(tickets: Vec<TicketView>) -> Result<Vec<u8>, ApiError> {
     let mut wtr = WriterBuilder::new().has_headers(true).from_writer(vec![]);
 
     wtr.write_record(&[
@@ -17,18 +17,20 @@ pub async fn create_ticket_csv(ticket: TicketView) -> Result<Vec<u8>, ApiError> 
         "Solution",
     ])?;
 
-    wtr.write_record(&[
-        ticket.id,
-        ticket.updated_at,
-        ticket.requester,
-        ticket.created_at,
-        ticket.status,
-        ticket.title,
-        ticket.description,
-        ticket.closed_by,
-        ticket.closed_at,
-        ticket.solution,
-    ])?;
+    for ticket in tickets {
+        wtr.write_record(&[
+            ticket.id,
+            ticket.updated_at,
+            ticket.requester,
+            ticket.created_at,
+            ticket.status,
+            ticket.title,
+            ticket.description,
+            ticket.closed_by,
+            ticket.closed_at,
+            ticket.solution,
+        ])?;
+    }
 
     wtr.flush().unwrap();
 
