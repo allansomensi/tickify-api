@@ -33,7 +33,7 @@ Tickify is a support ticket management API built in **Rust** using **Axum**. It 
 ## 1. Installation
 
 ``` bash
-git clone https://github.com/allansomensi/tickify.git
+git clone https://github.com/allansomensi/tickify-api.git
 cd tickify
 ```
 
