@@ -98,7 +98,7 @@ pub struct CreateTicketPayload {
         message = "Description must be between 3 and 3000 chars."
     ))]
     pub description: String,
-    pub requester: String,
+    pub requester: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Validate)]
