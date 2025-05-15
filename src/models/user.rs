@@ -41,6 +41,18 @@ pub struct User {
     pub updated_at: NaiveDateTime,
 }
 
+#[derive(ToSchema, Clone, FromRow, Serialize, Deserialize)]
+pub struct UserPublic {
+    pub id: Uuid,
+    pub username: String,
+    pub email: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub role: Role,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}
+
 #[derive(Deserialize, Serialize, ToSchema, Validate)]
 pub struct CreateUserPayload {
     #[validate(length(
@@ -130,11 +142,11 @@ impl User {
         Ok(UserRepositoryImpl::count(state).await?)
     }
 
-    pub async fn find_all(state: &AppState) -> Result<Vec<Self>, ApiError> {
+    pub async fn find_all(state: &AppState) -> Result<Vec<UserPublic>, ApiError> {
         Ok(UserRepositoryImpl::find_all(state).await?)
     }
 
-    pub async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<Self>, ApiError> {
+    pub async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<UserPublic>, ApiError> {
         Ok(UserRepositoryImpl::find_by_id(state, id).await?)
     }
 

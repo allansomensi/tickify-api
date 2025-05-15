@@ -1,5 +1,5 @@
 use crate::database::AppState;
-use crate::models::user::Role;
+use crate::models::user::{Role, UserPublic};
 use crate::models::{
     user::{CreateUserPayload, UpdateUserPayload},
     DeletePayload,
@@ -74,7 +74,7 @@ pub async fn count_users(
         ("jwt_token" = ["jwt_token"])
     ),
     responses(
-        (status = 200, description = "Users retrieved successfully.", body = Vec<User>),
+        (status = 200, description = "Users retrieved successfully.", body = Vec<UserPublic>),
         (status = 404, description = "No users found in the database."),
         (status = 500, description = "An error occurred while retrieving the users.")
     )
@@ -119,7 +119,7 @@ pub async fn find_all_users(
         ("jwt_token" = ["jwt_token"])
     ),
     responses(
-        (status = 200, description = "User retrieved successfully.", body = User),
+        (status = 200, description = "User retrieved successfully.", body = UserPublic),
         (status = 404, description = "No user found with the specified ID."),
         (status = 500, description = "An error occurred while retrieving the user.")
     )
