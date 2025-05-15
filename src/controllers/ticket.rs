@@ -1,4 +1,5 @@
 use crate::database::AppState;
+use crate::models::ticket::TicketPublic;
 use crate::models::user::{Role, User};
 use crate::models::{ticket::CreateTicketPayload, ticket::UpdateTicketPayload, DeletePayload};
 use crate::validations::existence::ticket_exists;
@@ -66,7 +67,7 @@ pub async fn count_tickets(
         ("jwt_token" = ["jwt_token"])
     ),
     responses(
-        (status = 200, description = "Tickets retrieved successfully.", body = Vec<Ticket>),
+        (status = 200, description = "Tickets retrieved successfully.", body = Vec<TicketPublic>),
         (status = 404, description = "No tickets found in the database."),
         (status = 500, description = "An error occurred while retrieving the tickets.")
     )
@@ -163,12 +164,38 @@ pub async fn find_ticket_by_id(
 )]
 pub async fn create_ticket(
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
     Json(payload): Json<CreateTicketPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!(
         "Received request to create ticket with title: {}",
         payload.title
     );
+
+    println!("{:?}", current_user.role);
+
+    // If not admin, get the requester from the JWT
+    let payload = if current_user.role != Role::Admin && current_user.role != Role::Moderator {
+        CreateTicketPayload {
+            title: payload.title,
+            description: payload.description,
+            requester: Some(current_user.username),
+        }
+    } else {
+        if payload.requester.is_some() {
+            CreateTicketPayload {
+                title: payload.title,
+                description: payload.description,
+                requester: payload.requester,
+            }
+        } else {
+            CreateTicketPayload {
+                title: payload.title,
+                description: payload.description,
+                requester: Some(current_user.username),
+            }
+        }
+    };
 
     // Validations
     payload.validate()?;
@@ -179,7 +206,7 @@ pub async fn create_ticket(
             Ok((StatusCode::CREATED, Json(new_ticket.id)))
         }
         Err(e) => {
-            error!("Error creating ticket with title {}: {e}", payload.title);
+            error!("Error creating ticket with title '{}': {e}", payload.title);
             Err(ApiError::from(e))
         }
     }
@@ -213,9 +240,33 @@ pub async fn create_ticket(
 )]
 pub async fn update_ticket(
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
     Json(payload): Json<UpdateTicketPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to update ticket with ID: {}", payload.id);
+
+    // If not admin, ignore requester, status, closed_by and solution fields
+    let payload = if current_user.role != Role::Admin && current_user.role != Role::Moderator {
+        UpdateTicketPayload {
+            id: payload.id,
+            title: payload.title,
+            description: payload.description,
+            status: None,
+            requester: None,
+            closed_by: None,
+            solution: None,
+        }
+    } else {
+        UpdateTicketPayload {
+            id: payload.id,
+            title: payload.title,
+            description: payload.description,
+            status: payload.status,
+            requester: payload.requester,
+            closed_by: payload.closed_by,
+            solution: payload.solution,
+        }
+    };
 
     // Validations
     payload.validate()?;
