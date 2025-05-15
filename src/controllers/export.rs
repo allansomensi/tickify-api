@@ -2,10 +2,7 @@ use crate::{
     database::AppState,
     errors::api_error::ApiError,
     export::{csv::create_tickets_csv, pdf::create_ticket_pdf},
-    models::{
-        ticket::{Ticket, TicketView},
-        user::User,
-    },
+    models::ticket::{Ticket, TicketView},
 };
 use axum::{
     body::Bytes,
@@ -53,40 +50,7 @@ pub async fn ticket_to_pdf(
     // For each field not found, returns `null`.
 
     let id = ticket.id.to_string();
-
-    let requester_username = match User::find_by_id(&state, ticket.requester).await {
-        Ok(Some(requester)) => Ok(requester.username),
-        Ok(None) => {
-            error!("No user found with id: {id}");
-            Err(ApiError::NotFound)
-        }
-        Err(e) => {
-            error!(
-                "Error retrieving requester of ticket with id {}: {e}",
-                ticket.requester
-            );
-            Err(ApiError::from(e))
-        }
-    }?;
-
-    let closed_by_username = if let Some(closed_by_uuid) = ticket.closed_by {
-        match User::find_by_id(&state, closed_by_uuid).await {
-            Ok(Some(user)) => Ok(user.username),
-            Ok(None) => {
-                error!("No user found with id: {closed_by_uuid}");
-                Err(ApiError::NotFound)
-            }
-            Err(e) => {
-                error!("Error retrieving requester of ticket with id {closed_by_uuid}: {e}");
-                Err(ApiError::from(e))
-            }
-        }
-    } else {
-        Ok("null".to_string())
-    }?;
-
     let formatted_status = ticket.status.to_string();
-
     let formatted_solution = if let Some(solution) = ticket.solution {
         solution
     } else {
@@ -104,13 +68,19 @@ pub async fn ticket_to_pdf(
         "null".to_string()
     };
 
+    let formatted_closed_by = if let Some(closed_by) = ticket.closed_by {
+        closed_by.username.to_string()
+    } else {
+        "null".to_string()
+    };
+
     let formatted_ticket = TicketView {
         id,
         title: ticket.title,
         description: ticket.description,
-        requester: requester_username,
+        requester: ticket.requester.username,
         status: formatted_status,
-        closed_by: closed_by_username,
+        closed_by: formatted_closed_by,
         solution: formatted_solution,
         created_at: formatted_created_at,
         updated_at: formatted_updated_at,
@@ -172,37 +142,6 @@ pub async fn ticket_to_csv(
 
     let id = ticket.id.to_string();
 
-    let requester_username = match User::find_by_id(&state, ticket.requester).await {
-        Ok(Some(requester)) => Ok(requester.username),
-        Ok(None) => {
-            error!("No user found with id: {id}");
-            Err(ApiError::NotFound)
-        }
-        Err(e) => {
-            error!(
-                "Error retrieving requester of ticket with id {}: {e}",
-                ticket.requester
-            );
-            Err(ApiError::from(e))
-        }
-    }?;
-
-    let closed_by_username = if let Some(closed_by_uuid) = ticket.closed_by {
-        match User::find_by_id(&state, closed_by_uuid).await {
-            Ok(Some(user)) => Ok(user.username),
-            Ok(None) => {
-                error!("No user found with id: {closed_by_uuid}");
-                Err(ApiError::NotFound)
-            }
-            Err(e) => {
-                error!("Error retrieving requester of ticket with id {closed_by_uuid}: {e}");
-                Err(ApiError::from(e))
-            }
-        }
-    } else {
-        Ok("null".to_string())
-    }?;
-
     let formatted_status = ticket.status.to_string();
 
     let formatted_solution = if let Some(solution) = ticket.solution {
@@ -222,13 +161,19 @@ pub async fn ticket_to_csv(
         "null".to_string()
     };
 
+    let formatted_closed_by = if let Some(closed_by) = ticket.closed_by {
+        closed_by.username.to_string()
+    } else {
+        "null".to_string()
+    };
+
     let formatted_ticket = TicketView {
         id,
         title: ticket.title,
         description: ticket.description,
-        requester: requester_username,
+        requester: ticket.requester.username,
         status: formatted_status,
-        closed_by: closed_by_username,
+        closed_by: formatted_closed_by,
         solution: formatted_solution,
         created_at: formatted_created_at,
         updated_at: formatted_updated_at,
@@ -286,37 +231,6 @@ pub async fn tickets_to_csv(
     for ticket in tickets {
         let id = ticket.id.to_string();
 
-        let requester_username = match User::find_by_id(&state, ticket.requester).await {
-            Ok(Some(requester)) => requester.username,
-            Ok(None) => {
-                error!("No user found with id: {}", ticket.requester);
-                "null".to_string()
-            }
-            Err(e) => {
-                error!(
-                    "Error retrieving requester of ticket with id {}: {e}",
-                    ticket.requester
-                );
-                "null".to_string()
-            }
-        };
-
-        let closed_by_username = if let Some(closed_by_uuid) = ticket.closed_by {
-            match User::find_by_id(&state, closed_by_uuid).await {
-                Ok(Some(user)) => user.username,
-                Ok(None) => {
-                    error!("No user found with id: {}", closed_by_uuid);
-                    "null".to_string()
-                }
-                Err(e) => {
-                    error!("Error retrieving closed_by user for ticket: {e}");
-                    "null".to_string()
-                }
-            }
-        } else {
-            "null".to_string()
-        };
-
         let formatted_status = ticket.status.to_string();
         let formatted_solution = ticket.solution.unwrap_or_else(|| "null".to_string());
 
@@ -328,11 +242,17 @@ pub async fn tickets_to_csv(
             closed_at.format(time_fmt).to_string()
         });
 
+        let closed_by_username = if let Some(closed_by) = ticket.closed_by {
+            closed_by.username.to_string()
+        } else {
+            "null".to_string()
+        };
+
         ticket_views.push(TicketView {
             id,
             title: ticket.title,
             description: ticket.description,
-            requester: requester_username,
+            requester: ticket.requester.username,
             status: formatted_status,
             closed_by: closed_by_username,
             solution: formatted_solution,
