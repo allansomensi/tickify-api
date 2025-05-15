@@ -1,15 +1,4 @@
-mod config;
-mod controllers;
-mod database;
-mod errors;
-mod export;
-mod middlewares;
-mod models;
-mod openapi;
-mod routes;
-mod server;
-mod utils;
-mod validations;
+use tickify_api::{config, errors, server};
 
 #[tokio::main]
 async fn main() -> Result<(), errors::api_error::ApiError> {
