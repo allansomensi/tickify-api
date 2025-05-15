@@ -2,18 +2,22 @@ use crate::{
     database::AppState,
     errors::api_error::ApiError,
     models::{
-        ticket::{CreateTicketPayload, Ticket, TicketStatus, UpdateTicketPayload},
+        ticket::{
+            CreateTicketPayload, RequesterInfo, Ticket, TicketPublic, TicketStatus,
+            UpdateTicketPayload,
+        },
         DeletePayload,
     },
 };
+use sqlx::Row;
 use tracing::{debug, info};
 use uuid::Uuid;
 
 #[async_trait::async_trait]
 pub trait TicketRepository {
     async fn count(state: &AppState) -> Result<i64, ApiError>;
-    async fn find_all(state: &AppState) -> Result<Vec<Ticket>, ApiError>;
-    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<Ticket>, ApiError>;
+    async fn find_all(state: &AppState) -> Result<Vec<TicketPublic>, ApiError>;
+    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<TicketPublic>, ApiError>;
     async fn create(state: &AppState, payload: &CreateTicketPayload) -> Result<Ticket, ApiError>;
     async fn update(state: &AppState, payload: &UpdateTicketPayload) -> Result<Uuid, ApiError>;
     async fn delete(state: &AppState, payload: &DeletePayload) -> Result<(), ApiError>;
@@ -33,25 +37,152 @@ impl TicketRepository for TicketRepositoryImpl {
         Ok(count)
     }
 
-    async fn find_all(state: &AppState) -> Result<Vec<Ticket>, ApiError> {
-        debug!("Attempting to retrieve all tickets from the database...");
+    async fn find_all(state: &AppState) -> Result<Vec<TicketPublic>, ApiError> {
+        debug!("Attempting to retrieve all tickets...");
 
-        let tickets: Vec<Ticket> = sqlx::query_as(r#"SELECT * FROM tickets;"#)
-            .fetch_all(&state.db)
-            .await?;
+        let rows = sqlx::query(
+            r#"
+        SELECT 
+            t.id AS ticket_id,
+            t.title,
+            t.description,
+            t.status::ticket_status,
+            t.solution,
+            t.created_at AS ticket_created_at,
+            t.updated_at AS ticket_updated_at,
+            t.closed_at,
+
+            -- requester
+            u.id AS requester_id,
+            u.username AS requester_username,
+            u.email AS requester_email,
+            u.first_name AS requester_first_name,
+            u.last_name AS requester_last_name,
+
+            -- closed_by
+            cb.id AS closed_by_id,
+            cb.username AS closed_by_username,
+            cb.email AS closed_by_email,
+            cb.first_name AS closed_by_first_name,
+            cb.last_name AS closed_by_last_name
+        FROM tickets t
+        JOIN users u ON u.id = t.requester
+        LEFT JOIN users cb ON cb.id = t.closed_by
+        "#,
+        )
+        .fetch_all(&state.db)
+        .await?;
+
+        let tickets = rows
+            .into_iter()
+            .map(|row| {
+                let closed_by = match row.try_get::<Uuid, _>("closed_by_id") {
+                    Ok(id) => Some(RequesterInfo {
+                        id,
+                        username: row.get("closed_by_username"),
+                        email: row.get("closed_by_email"),
+                        first_name: row.get("closed_by_first_name"),
+                        last_name: row.get("closed_by_last_name"),
+                    }),
+                    Err(_) => None,
+                };
+
+                TicketPublic {
+                    id: row.get("ticket_id"),
+                    title: row.get("title"),
+                    description: row.get("description"),
+                    status: row.get("status"),
+                    solution: row.get("solution"),
+                    created_at: row.get("ticket_created_at"),
+                    updated_at: row.get("ticket_updated_at"),
+                    closed_at: row.get("closed_at"),
+                    requester: RequesterInfo {
+                        id: row.get("requester_id"),
+                        username: row.get("requester_username"),
+                        email: row.get("requester_email"),
+                        first_name: row.get("requester_first_name"),
+                        last_name: row.get("requester_last_name"),
+                    },
+                    closed_by,
+                }
+            })
+            .collect();
 
         Ok(tickets)
     }
 
-    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<Ticket>, ApiError> {
+    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<TicketPublic>, ApiError> {
         debug!("Attempting to retrieve ticket with id: {id}");
 
-        let ticket: Option<Ticket> = sqlx::query_as(r#"SELECT * FROM tickets WHERE id = $1;"#)
-            .bind(id)
-            .fetch_optional(&state.db)
-            .await?;
+        let row = sqlx::query(
+            r#"
+        SELECT 
+            t.id AS ticket_id,
+            t.title,
+            t.description,
+            t.status::ticket_status,
+            t.solution,
+            t.created_at AS ticket_created_at,
+            t.updated_at AS ticket_updated_at,
+            t.closed_at,
 
-        Ok(ticket)
+            -- requester
+            u.id AS requester_id,
+            u.username AS requester_username,
+            u.email AS requester_email,
+            u.first_name AS requester_first_name,
+            u.last_name AS requester_last_name,
+
+            -- closed_by
+            cb.id AS closed_by_id,
+            cb.username AS closed_by_username,
+            cb.email AS closed_by_email,
+            cb.first_name AS closed_by_first_name,
+            cb.last_name AS closed_by_last_name
+        FROM tickets t
+        JOIN users u ON u.id = t.requester
+        LEFT JOIN users cb ON cb.id = t.closed_by
+        WHERE t.id = $1
+        "#,
+        )
+        .bind(id)
+        .fetch_optional(&state.db)
+        .await?;
+
+        if let Some(row) = row {
+            let closed_by = match row.try_get::<Uuid, _>("closed_by_id") {
+                Ok(id) => Some(RequesterInfo {
+                    id,
+                    username: row.get("closed_by_username"),
+                    email: row.get("closed_by_email"),
+                    first_name: row.get("closed_by_first_name"),
+                    last_name: row.get("closed_by_last_name"),
+                }),
+                Err(_) => None,
+            };
+
+            let ticket = TicketPublic {
+                id: row.get("ticket_id"),
+                title: row.get("title"),
+                description: row.get("description"),
+                status: row.get("status"),
+                solution: row.get("solution"),
+                created_at: row.get("ticket_created_at"),
+                updated_at: row.get("ticket_updated_at"),
+                closed_at: row.get("closed_at"),
+                requester: RequesterInfo {
+                    id: row.get("requester_id"),
+                    username: row.get("requester_username"),
+                    email: row.get("requester_email"),
+                    first_name: row.get("requester_first_name"),
+                    last_name: row.get("requester_last_name"),
+                },
+                closed_by,
+            };
+            Ok(Some(ticket))
+        } else {
+            Ok(None)
+        }
     }
 
     async fn create(state: &AppState, payload: &CreateTicketPayload) -> Result<Ticket, ApiError> {

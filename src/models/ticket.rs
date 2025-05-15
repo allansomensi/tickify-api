@@ -52,6 +52,29 @@ pub struct Ticket {
     pub closed_at: Option<NaiveDateTime>,
 }
 
+#[derive(ToSchema, FromRow, Serialize, Deserialize)]
+pub struct TicketPublic {
+    pub id: Uuid,
+    pub title: String,
+    pub description: String,
+    pub status: TicketStatus,
+    pub requester: RequesterInfo,
+    pub closed_by: Option<RequesterInfo>,
+    pub solution: Option<String>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub closed_at: Option<NaiveDateTime>,
+}
+
+#[derive(ToSchema, Clone, FromRow, Serialize, Deserialize)]
+pub struct RequesterInfo {
+    pub id: Uuid,
+    pub username: String,
+    pub email: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+}
+
 pub struct TicketView {
     pub id: String,
     pub title: String,
@@ -120,11 +143,11 @@ impl Ticket {
         Ok(TicketRepositoryImpl::count(state).await?)
     }
 
-    pub async fn find_all(state: &AppState) -> Result<Vec<Self>, ApiError> {
+    pub async fn find_all(state: &AppState) -> Result<Vec<TicketPublic>, ApiError> {
         Ok(TicketRepositoryImpl::find_all(state).await?)
     }
 
-    pub async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<Self>, ApiError> {
+    pub async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<TicketPublic>, ApiError> {
         Ok(TicketRepositoryImpl::find_by_id(state, id).await?)
     }
 
