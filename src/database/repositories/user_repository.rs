@@ -2,7 +2,7 @@ use crate::{
     database::AppState,
     errors::api_error::ApiError,
     models::{
-        user::{CreateUserPayload, UpdateUserPayload, User},
+        user::{CreateUserPayload, UpdateUserPayload, User, UserPublic},
         DeletePayload,
     },
     utils::hashing::encrypt_password,
@@ -13,8 +13,8 @@ use uuid::Uuid;
 #[async_trait::async_trait]
 pub trait UserRepository {
     async fn count(state: &AppState) -> Result<i64, ApiError>;
-    async fn find_all(state: &AppState) -> Result<Vec<User>, ApiError>;
-    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<User>, ApiError>;
+    async fn find_all(state: &AppState) -> Result<Vec<UserPublic>, ApiError>;
+    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<UserPublic>, ApiError>;
     async fn create(state: &AppState, payload: &CreateUserPayload) -> Result<User, ApiError>;
     async fn update(state: &AppState, payload: &UpdateUserPayload) -> Result<Uuid, ApiError>;
     async fn delete(state: &AppState, payload: &DeletePayload) -> Result<(), ApiError>;
@@ -34,23 +34,36 @@ impl UserRepository for UserRepositoryImpl {
         Ok(count)
     }
 
-    async fn find_all(state: &AppState) -> Result<Vec<User>, ApiError> {
+    async fn find_all(state: &AppState) -> Result<Vec<UserPublic>, ApiError> {
         debug!("Attempting to retrieve all users from the database...");
 
-        let users: Vec<User> = sqlx::query_as(r#"SELECT * FROM users;"#)
-            .fetch_all(&state.db)
-            .await?;
+        let users: Vec<UserPublic> = sqlx::query_as(
+            r#"
+        SELECT 
+            id, username, email, first_name, last_name, role, created_at, updated_at
+        FROM users;
+        "#,
+        )
+        .fetch_all(&state.db)
+        .await?;
 
         Ok(users)
     }
 
-    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<User>, ApiError> {
+    async fn find_by_id(state: &AppState, id: Uuid) -> Result<Option<UserPublic>, ApiError> {
         debug!("Attempting to retrieve user with id: {id}");
 
-        let user: Option<User> = sqlx::query_as(r#"SELECT * FROM users WHERE id = $1;"#)
-            .bind(id)
-            .fetch_optional(&state.db)
-            .await?;
+        let user: Option<UserPublic> = sqlx::query_as(
+            r#"
+        SELECT 
+            id, username, email, first_name, last_name, role, created_at, updated_at
+        FROM users
+        WHERE id = $1;
+        "#,
+        )
+        .bind(id)
+        .fetch_optional(&state.db)
+        .await?;
 
         Ok(user)
     }
