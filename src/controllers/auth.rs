@@ -3,7 +3,7 @@ use crate::{
     errors::api_error::ApiError,
     models::{
         auth::{LoginPayload, VerifyTokenPayload},
-        user::{CreateUserPayload, User},
+        user::{CreateUserPayload, RegisterPayload, User},
     },
     utils::{
         hashing::verify_password,
@@ -69,7 +69,7 @@ pub async fn login(
     tags = ["Auth"],
     summary = "Register a new user.",
     description = "This endpoint register a new user in the database with the provided details.",
-    request_body = CreateUserPayload,
+    request_body = RegisterPayload,
     responses(
         (status = 201, description = "User registered successfully.", body = Uuid),
         (status = 400, description = "Invalid input, including empty name or name too short/long."),
@@ -79,7 +79,7 @@ pub async fn login(
 )]
 pub async fn register(
     State(state): State<Arc<AppState>>,
-    Json(payload): Json<CreateUserPayload>,
+    Json(payload): Json<RegisterPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!(
         "Received request to register user with username: {}",
@@ -90,7 +90,9 @@ pub async fn register(
     payload.validate()?;
     is_user_unique(&state, &payload.username).await?;
 
-    match User::create(&state, &payload).await {
+    let user_payload = CreateUserPayload::from(payload);
+
+    match User::create(&state, &user_payload).await {
         Ok(new_user) => {
             info!("User created! ID: {}", &new_user.id);
             Ok((StatusCode::CREATED, Json(new_user.id)))
@@ -98,7 +100,7 @@ pub async fn register(
         Err(e) => {
             error!(
                 "Error creating user with username {}: {e}",
-                payload.username
+                user_payload.username
             );
             Err(ApiError::from(e))
         }

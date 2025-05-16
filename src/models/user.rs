@@ -54,6 +54,49 @@ pub struct UserPublic {
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Validate)]
+pub struct RegisterPayload {
+    #[validate(length(
+        min = 3,
+        max = 20,
+        message = "Username must be between 3 and 20 chars."
+    ))]
+    pub username: String,
+    #[validate(email(message = "Invalid email"))]
+    pub email: Option<String>,
+    #[validate(length(
+        min = 8,
+        max = 100,
+        message = "Password must be between 8 and 100 chars."
+    ))]
+    pub password: String,
+    #[validate(length(
+        min = 3,
+        max = 20,
+        message = "First name must be between 3 and 20 chars."
+    ))]
+    pub first_name: Option<String>,
+    #[validate(length(
+        min = 3,
+        max = 20,
+        message = "Last name must be between 3 and 20 chars."
+    ))]
+    pub last_name: Option<String>,
+}
+
+impl From<RegisterPayload> for CreateUserPayload {
+    fn from(value: RegisterPayload) -> Self {
+        Self {
+            username: value.username,
+            email: value.email,
+            password: value.password,
+            first_name: value.first_name,
+            last_name: value.last_name,
+            role: Some(Role::User),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, ToSchema, Validate)]
 pub struct CreateUserPayload {
     #[validate(length(
         min = 3,
