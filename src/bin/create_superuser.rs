@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tickify_api::{
     config,
     database::{connection::create_pool, AppState},
-    models::user::{CreateUserPayload, Role, User},
+    models::user::{CreateUserPayload, Role, Status, User},
     validations::uniqueness::is_user_unique,
 };
 use tracing::{error, info};
@@ -41,6 +41,7 @@ async fn main() {
         username: args.username,
         password: args.password,
         role: Some(Role::Admin),
+        status: Some(Status::default()),
         email: None,
         first_name: None,
         last_name: None,

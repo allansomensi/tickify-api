@@ -28,6 +28,20 @@ impl Default for Role {
     }
 }
 
+#[derive(ToSchema, PartialEq, Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
+#[sqlx(type_name = "user_status", rename_all = "lowercase")]
+pub enum Status {
+    Active,
+    Inactive,
+}
+
+impl Default for Status {
+    fn default() -> Self {
+        Self::Active
+    }
+}
+
 #[derive(ToSchema, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
@@ -37,6 +51,7 @@ pub struct User {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub role: Role,
+    pub status: Status,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -49,6 +64,7 @@ pub struct UserPublic {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub role: Role,
+    pub status: Status,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -91,7 +107,8 @@ impl From<RegisterPayload> for CreateUserPayload {
             password: value.password,
             first_name: value.first_name,
             last_name: value.last_name,
-            role: Some(Role::User),
+            role: Some(Role::default()),
+            status: Some(Status::default()),
         }
     }
 }
@@ -125,6 +142,7 @@ pub struct CreateUserPayload {
     ))]
     pub last_name: Option<String>,
     pub role: Option<Role>,
+    pub status: Option<Status>,
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Validate)]
@@ -157,6 +175,7 @@ pub struct UpdateUserPayload {
     ))]
     pub last_name: Option<String>,
     pub role: Option<Role>,
+    pub status: Option<Status>,
 }
 
 impl User {
@@ -167,6 +186,7 @@ impl User {
         first_name: Option<String>,
         last_name: Option<String>,
         role: Option<Role>,
+        status: Option<Status>,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -176,6 +196,7 @@ impl User {
             first_name,
             last_name,
             role: role.unwrap_or(Role::default()),
+            status: status.unwrap_or(Status::default()),
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
         }
