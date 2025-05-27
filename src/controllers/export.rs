@@ -2,13 +2,17 @@ use crate::{
     database::AppState,
     errors::api_error::ApiError,
     export::{csv::create_tickets_csv, pdf::create_ticket_pdf},
-    models::ticket::{Ticket, TicketView},
+    models::{
+        ticket::{Ticket, TicketView},
+        user::{Status, User},
+    },
 };
 use axum::{
     body::Bytes,
     extract::{Path, State},
     http::{header, HeaderMap},
     response::IntoResponse,
+    Extension,
 };
 use std::sync::Arc;
 use tracing::{debug, error};
@@ -31,8 +35,13 @@ use uuid::Uuid;
 pub async fn ticket_to_pdf(
     Path(id): Path<Uuid>,
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received a request to generate a PDF of the ticket with ID: {id}");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     let ticket = match Ticket::find_by_id(&state, id).await {
         Ok(Some(ticket)) => Ok(ticket),
@@ -122,8 +131,13 @@ pub async fn ticket_to_pdf(
 pub async fn ticket_to_csv(
     Path(id): Path<Uuid>,
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received a request to generate a PDF of the ticket with ID: {id}");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     let ticket = match Ticket::find_by_id(&state, id).await {
         Ok(Some(ticket)) => Ok(ticket),
@@ -214,8 +228,13 @@ pub async fn ticket_to_csv(
 )]
 pub async fn tickets_to_csv(
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received a request to generate a CSV of all tickets");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     let tickets = match Ticket::find_all(&state).await {
         Ok(tickets) => tickets,

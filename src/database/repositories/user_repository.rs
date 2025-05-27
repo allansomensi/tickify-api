@@ -109,7 +109,7 @@ impl UserRepository for UserRepositoryImpl {
         let new_email = &payload.email;
         let new_password = &payload.password;
         let new_role = &payload.role;
-        let new_status = &payload.role;
+        let new_status = &payload.status;
         let new_first_name = &payload.first_name;
         let new_last_name = &payload.last_name;
 

@@ -1,5 +1,5 @@
 use crate::database::AppState;
-use crate::models::user::{Role, UserPublic};
+use crate::models::user::{Role, Status, UserPublic};
 use crate::models::{
     user::{CreateUserPayload, UpdateUserPayload},
     DeletePayload,
@@ -43,6 +43,10 @@ pub async fn count_users(
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to retrieve user count.");
 
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
+
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);
     }
@@ -84,6 +88,10 @@ pub async fn find_all_users(
     Extension(current_user): Extension<User>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to retrieve all users.");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);
@@ -130,6 +138,10 @@ pub async fn find_user_by_id(
     Extension(current_user): Extension<User>,
 ) -> impl IntoResponse {
     debug!("Received request to retrieve user with id: {id}");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);
@@ -183,6 +195,10 @@ pub async fn create_user(
         "Received request to create user with username: {}",
         payload.username
     );
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);
@@ -240,6 +256,10 @@ pub async fn update_user(
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to update user with ID: {}", payload.id);
 
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
+
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);
     }
@@ -288,6 +308,10 @@ pub async fn delete_user(
     Json(payload): Json<DeletePayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to delete user with ID: {}", payload.id);
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);
