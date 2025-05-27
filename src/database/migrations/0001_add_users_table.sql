@@ -1,4 +1,5 @@
 CREATE TYPE user_role AS ENUM ('user', 'moderator', 'admin');
+CREATE TYPE user_status AS ENUM ('active', 'inactive');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
@@ -8,6 +9,7 @@ CREATE TABLE users (
     first_name VARCHAR(50),
     last_name VARCHAR(50),
     role user_role NOT NULL,
+    status user_status NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
