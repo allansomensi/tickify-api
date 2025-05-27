@@ -1,6 +1,6 @@
 use crate::database::AppState;
 use crate::models::ticket::TicketPublic;
-use crate::models::user::{Role, User};
+use crate::models::user::{Role, Status, User};
 use crate::models::{ticket::CreateTicketPayload, ticket::UpdateTicketPayload, DeletePayload};
 use crate::validations::existence::ticket_exists;
 use crate::{errors::api_error::ApiError, models::ticket::Ticket};
@@ -37,8 +37,13 @@ use validator::Validate;
 )]
 pub async fn count_tickets(
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to retrieve ticket count.");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     match Ticket::count(&state).await {
         Ok(count) => {
@@ -74,8 +79,13 @@ pub async fn count_tickets(
 )]
 pub async fn find_all_tickets(
     State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<User>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to retrieve all tickets.");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     match Ticket::find_all(&state).await {
         Ok(tickets) => {
@@ -118,6 +128,10 @@ pub async fn find_ticket_by_id(
     Extension(current_user): Extension<User>,
 ) -> impl IntoResponse {
     debug!("Received request to retrieve ticket with id: {id}");
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);
@@ -172,7 +186,9 @@ pub async fn create_ticket(
         payload.title
     );
 
-    println!("{:?}", current_user.role);
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     // If not admin, get the requester from the JWT
     let payload = if current_user.role != Role::Admin && current_user.role != Role::Moderator {
@@ -245,6 +261,10 @@ pub async fn update_ticket(
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to update ticket with ID: {}", payload.id);
 
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
+
     // If not admin, ignore requester, status, closed_by and solution fields
     let payload = if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         UpdateTicketPayload {
@@ -312,6 +332,10 @@ pub async fn delete_ticket(
     Json(payload): Json<DeletePayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to delete ticket with ID: {}", payload.id);
+
+    if current_user.status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
 
     if current_user.role != Role::Admin && current_user.role != Role::Moderator {
         return Err(ApiError::Unauthorized);

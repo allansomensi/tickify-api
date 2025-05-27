@@ -3,7 +3,7 @@ use crate::{
     errors::api_error::ApiError,
     models::{
         auth::{LoginPayload, VerifyTokenPayload},
-        user::{CreateUserPayload, RegisterPayload, User},
+        user::{CreateUserPayload, RegisterPayload, Status, User},
     },
     utils::{
         hashing::verify_password,
@@ -34,6 +34,21 @@ pub async fn login(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<LoginPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
+    let user_status: Option<Status> =
+        sqlx::query_scalar(r#"SELECT status FROM users WHERE username = $1;"#)
+            .bind(&payload.username)
+            .fetch_optional(&state.db)
+            .await?;
+
+    let user_status = match user_status {
+        Some(status) => status,
+        None => return Err(ApiError::NotFound),
+    };
+
+    if user_status != Status::Active {
+        return Err(ApiError::Unauthorized);
+    }
+
     let password_hash: Option<String> =
         sqlx::query_scalar(r#"SELECT password_hash FROM users WHERE username = $1;"#)
             .bind(&payload.username)
