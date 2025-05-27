@@ -79,5 +79,5 @@ clean:
     @cargo clean
 
 [group: 'scripts']
-create_superuser *args='':
+create-superuser *args='':
     @cargo run --bin create_superuser -- {{args}}
