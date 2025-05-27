@@ -3,7 +3,7 @@ use crate::{
     errors::api_error::ApiError,
     models::{
         auth::{LoginPayload, VerifyTokenPayload},
-        user::{CreateUserPayload, RegisterPayload, Status, User},
+        user::{CreateUserPayload, RegisterPayload, Role, Status, User},
     },
     utils::{
         hashing::verify_password,
@@ -67,7 +67,19 @@ pub async fn login(
         return Err(ApiError::Unauthorized);
     }
 
-    let token = generate_jwt(&payload.username)?;
+    let user_role: Option<Role> =
+        sqlx::query_scalar(r#"SELECT role FROM users WHERE username = $1;"#)
+            .bind(&payload.username)
+            .fetch_optional(&state.db)
+            .await?;
+
+    let user_role = match user_role {
+        Some(role) => role,
+        None => return Err(ApiError::NotFound),
+    };
+    let user_role = user_role.to_string();
+
+    let token = generate_jwt(&payload.username, &user_role)?;
 
     info!("Login successful for user: {}", payload.username);
 

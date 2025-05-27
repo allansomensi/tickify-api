@@ -7,6 +7,7 @@ pub struct Claims {
     pub iat: usize,
     pub sub: String,
     pub exp: usize,
+    pub role: String,
 }
 
 #[derive(Deserialize, Serialize, ToSchema, Validate)]

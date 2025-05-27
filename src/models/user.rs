@@ -28,6 +28,16 @@ impl Default for Role {
     }
 }
 
+impl ToString for Role {
+    fn to_string(&self) -> String {
+        match &self {
+            Self::User => String::from("user"),
+            Self::Moderator => String::from("moderator"),
+            Self::Admin => String::from("admin"),
+        }
+    }
+}
+
 #[derive(ToSchema, PartialEq, Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 #[sqlx(type_name = "user_status", rename_all = "lowercase")]

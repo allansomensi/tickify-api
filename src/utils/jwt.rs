@@ -3,7 +3,7 @@ use chrono::{Duration, TimeDelta, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use std::env;
 
-pub fn generate_jwt(username: &str) -> Result<String, ApiError> {
+pub fn generate_jwt(username: &str, role: &str) -> Result<String, ApiError> {
     let now = Utc::now();
     let expire: TimeDelta = Duration::seconds(
         env::var("JWT_EXPIRATION_TIME")?
@@ -12,11 +12,13 @@ pub fn generate_jwt(username: &str) -> Result<String, ApiError> {
     );
     let exp: usize = (now + expire).timestamp() as usize;
     let iat: usize = now.timestamp() as usize;
+    let role: String = role.to_string();
 
     let claims = Claims {
         iat,
         sub: username.to_string(),
         exp,
+        role,
     };
 
     let token = encode(
