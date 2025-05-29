@@ -12,7 +12,7 @@ use axum::{
 };
 use std::sync::Arc;
 
-pub async fn authorize(
+pub async fn authenticate(
     State(state): State<Arc<AppState>>,
     mut req: Request,
     next: Next,
