@@ -2,13 +2,8 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
 
-#[derive(Serialize, Deserialize)]
-pub struct Claims {
-    pub iat: usize,
-    pub sub: String,
-    pub exp: usize,
-    pub role: String,
-}
+pub mod access;
+pub mod token;
 
 #[derive(Deserialize, Serialize, ToSchema, Validate)]
 pub struct LoginPayload {
@@ -20,9 +15,4 @@ pub struct LoginPayload {
         message = "Password must be between 8 and 100 chars."
     ))]
     pub password: String,
-}
-
-#[derive(Deserialize, Serialize, ToSchema)]
-pub struct VerifyTokenPayload {
-    pub token: String,
 }

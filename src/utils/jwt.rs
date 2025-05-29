@@ -1,4 +1,4 @@
-use crate::{errors::api_error::ApiError, models::auth::Claims};
+use crate::{errors::api_error::ApiError, models::auth::token::Claims};
 use chrono::{Duration, TimeDelta, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use std::env;

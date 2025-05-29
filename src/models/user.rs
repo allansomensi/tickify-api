@@ -52,7 +52,7 @@ impl Default for Status {
     }
 }
 
-#[derive(ToSchema, Clone, FromRow, Serialize, Deserialize)]
+#[derive(ToSchema, Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
     pub username: String,

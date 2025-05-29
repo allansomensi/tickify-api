@@ -1,12 +1,12 @@
 use crate::database::AppState;
-use crate::models::user::{Role, Status, UserPublic};
+use crate::models::auth::access::AccessControl;
+use crate::models::user::{Role, UserPublic};
 use crate::models::{
     user::{CreateUserPayload, UpdateUserPayload},
     DeletePayload,
 };
 use crate::validations::{existence::user_exists, uniqueness::is_user_unique};
 use crate::{errors::api_error::ApiError, models::user::User};
-use axum::Extension;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -39,17 +39,11 @@ use validator::Validate;
 )]
 pub async fn count_users(
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<User>,
+    access: AccessControl,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to retrieve user count.");
 
-    if current_user.status != Status::Active {
-        return Err(ApiError::Unauthorized);
-    }
-
-    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
-        return Err(ApiError::Unauthorized);
-    }
+    access.require_any_role(&[Role::Admin, Role::Moderator])?;
 
     match User::count(&state).await {
         Ok(count) => {
@@ -85,17 +79,11 @@ pub async fn count_users(
 )]
 pub async fn find_all_users(
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<User>,
+    access: AccessControl,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to retrieve all users.");
 
-    if current_user.status != Status::Active {
-        return Err(ApiError::Unauthorized);
-    }
-
-    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
-        return Err(ApiError::Unauthorized);
-    }
+    access.require_any_role(&[Role::Admin, Role::Moderator])?;
 
     match User::find_all(&state).await {
         Ok(users) => {
@@ -135,17 +123,11 @@ pub async fn find_all_users(
 pub async fn find_user_by_id(
     Path(id): Path<Uuid>,
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<User>,
+    access: AccessControl,
 ) -> impl IntoResponse {
     debug!("Received request to retrieve user with id: {id}");
 
-    if current_user.status != Status::Active {
-        return Err(ApiError::Unauthorized);
-    }
-
-    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
-        return Err(ApiError::Unauthorized);
-    }
+    access.require_any_role(&[Role::Admin, Role::Moderator])?;
 
     match User::find_by_id(&state, id).await {
         Ok(Some(user)) => {
@@ -188,7 +170,7 @@ pub async fn find_user_by_id(
 )]
 pub async fn create_user(
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<User>,
+    access: AccessControl,
     Json(payload): Json<CreateUserPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!(
@@ -196,13 +178,7 @@ pub async fn create_user(
         payload.username
     );
 
-    if current_user.status != Status::Active {
-        return Err(ApiError::Unauthorized);
-    }
-
-    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
-        return Err(ApiError::Unauthorized);
-    }
+    access.require_any_role(&[Role::Admin, Role::Moderator])?;
 
     // Validations
     payload.validate()?;
@@ -251,18 +227,12 @@ pub async fn create_user(
 )]
 pub async fn update_user(
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<User>,
+    access: AccessControl,
     Json(payload): Json<UpdateUserPayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to update user with ID: {}", payload.id);
 
-    if current_user.status != Status::Active {
-        return Err(ApiError::Unauthorized);
-    }
-
-    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
-        return Err(ApiError::Unauthorized);
-    }
+    access.require_any_role(&[Role::Admin, Role::Moderator])?;
 
     // Validations
     payload.validate()?;
@@ -304,18 +274,12 @@ pub async fn update_user(
  )]
 pub async fn delete_user(
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<User>,
+    access: AccessControl,
     Json(payload): Json<DeletePayload>,
 ) -> Result<impl IntoResponse, ApiError> {
     debug!("Received request to delete user with ID: {}", payload.id);
 
-    if current_user.status != Status::Active {
-        return Err(ApiError::Unauthorized);
-    }
-
-    if current_user.role != Role::Admin && current_user.role != Role::Moderator {
-        return Err(ApiError::Unauthorized);
-    }
+    access.require_any_role(&[Role::Admin, Role::Moderator])?;
 
     // Validations
     user_exists(&state, payload.id).await?;

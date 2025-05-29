@@ -2,7 +2,7 @@ use crate::{
     database::AppState,
     errors::api_error::ApiError,
     models::{
-        auth::{LoginPayload, VerifyTokenPayload},
+        auth::{token::VerifyTokenPayload, LoginPayload},
         user::{CreateUserPayload, RegisterPayload, Role, Status, User},
     },
     utils::{
